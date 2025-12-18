@@ -1,0 +1,314 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://smithy.io/schemas/json-ast-2.0.json",
+  "title": "Smithy JSON AST",
+  "description": "JSON Schema for Smithy JSON Abstract Syntax Tree (AST) version 2.0",
+  "type": "object",
+  "required": ["smithy"],
+  "properties": {
+    "smithy": {
+      "type": "string",
+      "description": "Defines the version of the Smithy specification (e.g., '2.0' or '2')",
+      "pattern": "^2(\\.0)?$"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Defines metadata about the model",
+      "additionalProperties": true
+    },
+    "shapes": {
+      "type": "object",
+      "description": "A map of absolute shape IDs to shape definitions",
+      "additionalProperties": {
+        "$ref": "#/$defs/shape"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "shape": {
+      "oneOf": [
+        { "$ref": "#/$defs/simpleShape" },
+        { "$ref": "#/$defs/listShape" },
+        { "$ref": "#/$defs/mapShape" },
+        { "$ref": "#/$defs/structureShape" },
+        { "$ref": "#/$defs/unionShape" },
+        { "$ref": "#/$defs/enumShape" },
+        { "$ref": "#/$defs/intEnumShape" },
+        { "$ref": "#/$defs/serviceShape" },
+        { "$ref": "#/$defs/resourceShape" },
+        { "$ref": "#/$defs/operationShape" },
+        { "$ref": "#/$defs/applyType" }
+      ]
+    },
+    "simpleShape": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "blob",
+            "boolean",
+            "document",
+            "string",
+            "byte",
+            "short",
+            "integer",
+            "long",
+            "float",
+            "double",
+            "bigInteger",
+            "bigDecimal",
+            "timestamp"
+          ]
+        },
+        "traits": { "$ref": "#/$defs/traits" },
+        "mixins": { "$ref": "#/$defs/mixins" }
+      },
+      "additionalProperties": false
+    },
+    "listShape": {
+      "type": "object",
+      "required": ["type", "member"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "list"
+        },
+        "member": { "$ref": "#/$defs/member" },
+        "traits": { "$ref": "#/$defs/traits" },
+        "mixins": { "$ref": "#/$defs/mixins" }
+      },
+      "additionalProperties": false
+    },
+    "mapShape": {
+      "type": "object",
+      "required": ["type", "key", "value"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "map"
+        },
+        "key": { "$ref": "#/$defs/member" },
+        "value": { "$ref": "#/$defs/member" },
+        "traits": { "$ref": "#/$defs/traits" },
+        "mixins": { "$ref": "#/$defs/mixins" }
+      },
+      "additionalProperties": false
+    },
+    "structureShape": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "structure"
+        },
+        "members": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/member" }
+        },
+        "traits": { "$ref": "#/$defs/traits" },
+        "mixins": { "$ref": "#/$defs/mixins" }
+      },
+      "additionalProperties": false
+    },
+    "unionShape": {
+      "type": "object",
+      "required": ["type", "members"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "union"
+        },
+        "members": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "$ref": "#/$defs/member" }
+        },
+        "traits": { "$ref": "#/$defs/traits" },
+        "mixins": { "$ref": "#/$defs/mixins" }
+      },
+      "additionalProperties": false
+    },
+    "enumShape": {
+      "type": "object",
+      "required": ["type", "members"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "enum"
+        },
+        "members": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "$ref": "#/$defs/member" }
+        },
+        "traits": { "$ref": "#/$defs/traits" },
+        "mixins": { "$ref": "#/$defs/mixins" }
+      },
+      "additionalProperties": false
+    },
+    "intEnumShape": {
+      "type": "object",
+      "required": ["type", "members"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "intEnum"
+        },
+        "members": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "$ref": "#/$defs/member" }
+        },
+        "traits": { "$ref": "#/$defs/traits" },
+        "mixins": { "$ref": "#/$defs/mixins" }
+      },
+      "additionalProperties": false
+    },
+    "serviceShape": {
+      "type": "object",
+      "required": ["type", "version"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "service"
+        },
+        "version": {
+          "type": "string",
+          "description": "The version of the service"
+        },
+        "operations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/shapeReference" }
+        },
+        "resources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/shapeReference" }
+        },
+        "errors": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/shapeReference" }
+        },
+        "rename": {
+          "type": "object",
+          "description": "Maps shape IDs to their renamed identifiers",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          }
+        },
+        "traits": { "$ref": "#/$defs/traits" },
+        "mixins": { "$ref": "#/$defs/mixins" }
+      },
+      "additionalProperties": false
+    },
+    "resourceShape": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "resource"
+        },
+        "identifiers": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/shapeReference" }
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/shapeReference" }
+        },
+        "create": { "$ref": "#/$defs/shapeReference" },
+        "put": { "$ref": "#/$defs/shapeReference" },
+        "read": { "$ref": "#/$defs/shapeReference" },
+        "update": { "$ref": "#/$defs/shapeReference" },
+        "delete": { "$ref": "#/$defs/shapeReference" },
+        "list": { "$ref": "#/$defs/shapeReference" },
+        "operations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/shapeReference" }
+        },
+        "collectionOperations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/shapeReference" }
+        },
+        "resources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/shapeReference" }
+        },
+        "traits": { "$ref": "#/$defs/traits" },
+        "mixins": { "$ref": "#/$defs/mixins" }
+      },
+      "additionalProperties": false
+    },
+    "operationShape": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "operation"
+        },
+        "input": { "$ref": "#/$defs/shapeReference" },
+        "output": { "$ref": "#/$defs/shapeReference" },
+        "errors": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/shapeReference" }
+        },
+        "traits": { "$ref": "#/$defs/traits" },
+        "mixins": { "$ref": "#/$defs/mixins" }
+      },
+      "additionalProperties": false
+    },
+    "applyType": {
+      "type": "object",
+      "required": ["type", "traits"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "apply"
+        },
+        "traits": { "$ref": "#/$defs/traits" }
+      },
+      "additionalProperties": false
+    },
+    "member": {
+      "type": "object",
+      "required": ["target"],
+      "properties": {
+        "target": {
+          "type": "string",
+          "description": "Absolute shape ID of the member target",
+          "pattern": "^[A-Za-z0-9_\\.]+#[A-Za-z_][A-Za-z0-9_]*$"
+        },
+        "traits": { "$ref": "#/$defs/traits" }
+      },
+      "additionalProperties": false
+    },
+    "shapeReference": {
+      "type": "object",
+      "required": ["target"],
+      "properties": {
+        "target": {
+          "type": "string",
+          "description": "Absolute shape ID",
+          "pattern": "^[A-Za-z0-9_\\.]+#[A-Za-z_][A-Za-z0-9_]*(\\$[A-Za-z_][A-Za-z0-9_]*)?$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "traits": {
+      "type": "object",
+      "description": "Map of trait shape IDs to trait values",
+      "additionalProperties": true
+    },
+    "mixins": {
+      "type": "array",
+      "description": "Array of mixin shape references",
+      "items": { "$ref": "#/$defs/shapeReference" }
+    }
+  }
+}

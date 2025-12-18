@@ -1,0 +1,650 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://www.openpolicyagent.org/schema/rego.json",
+  "title": "OPA Rego Language Schema",
+  "description": "JSON Schema for Open Policy Agent Rego policy language abstract syntax representation",
+  "$defs": {
+    "Module": {
+      "type": "object",
+      "description": "A complete Rego module containing package declaration, imports, and rules",
+      "properties": {
+        "package": {
+          "$ref": "#/$defs/Package",
+          "description": "Package declaration for this module"
+        },
+        "imports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Import"
+          },
+          "description": "Import statements"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Rule"
+          },
+          "description": "Policy rules and definitions"
+        },
+        "comments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Comment"
+          },
+          "description": "Comments in the module"
+        }
+      },
+      "required": ["package"],
+      "additionalProperties": false
+    },
+    "Package": {
+      "type": "object",
+      "description": "Package declaration defining the namespace",
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/Ref",
+          "description": "Package path as a reference (e.g., data.example.policy)"
+        }
+      },
+      "required": ["path"],
+      "additionalProperties": false
+    },
+    "Import": {
+      "type": "object",
+      "description": "Import statement for external data or policies",
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/Term",
+          "description": "Import path"
+        },
+        "alias": {
+          "type": "string",
+          "description": "Optional alias for the import"
+        }
+      },
+      "required": ["path"],
+      "additionalProperties": false
+    },
+    "Rule": {
+      "type": "object",
+      "description": "A Rego rule definition",
+      "properties": {
+        "default": {
+          "type": "boolean",
+          "description": "Whether this is a default rule",
+          "default": false
+        },
+        "head": {
+          "$ref": "#/$defs/Head",
+          "description": "Rule head containing name and optional value/key"
+        },
+        "body": {
+          "$ref": "#/$defs/Body",
+          "description": "Rule body containing expressions"
+        },
+        "else": {
+          "$ref": "#/$defs/Rule",
+          "description": "Optional else clause"
+        }
+      },
+      "required": ["head"],
+      "additionalProperties": false
+    },
+    "Head": {
+      "type": "object",
+      "description": "Rule head defining the rule name and structure",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Rule name"
+        },
+        "key": {
+          "$ref": "#/$defs/Term",
+          "description": "Optional key for object/set rules"
+        },
+        "value": {
+          "$ref": "#/$defs/Term",
+          "description": "Optional value for the rule"
+        },
+        "assign": {
+          "type": "boolean",
+          "description": "Whether this uses assignment (:=) operator",
+          "default": false
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Term"
+          },
+          "description": "Function arguments if this is a function rule"
+        },
+        "ref": {
+          "$ref": "#/$defs/Ref",
+          "description": "Reference for partial rules"
+        }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+    "Body": {
+      "type": "array",
+      "description": "Rule body as a sequence of expressions",
+      "items": {
+        "$ref": "#/$defs/Expr"
+      }
+    },
+    "Expr": {
+      "type": "object",
+      "description": "An expression in a rule body",
+      "properties": {
+        "negated": {
+          "type": "boolean",
+          "description": "Whether the expression is negated",
+          "default": false
+        },
+        "terms": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Term"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Term"
+              }
+            }
+          ],
+          "description": "Terms in the expression"
+        },
+        "with": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/With"
+          },
+          "description": "With modifiers for the expression"
+        }
+      },
+      "required": ["terms"],
+      "additionalProperties": false
+    },
+    "With": {
+      "type": "object",
+      "description": "With modifier to replace values during evaluation",
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/Term",
+          "description": "Target reference to replace"
+        },
+        "value": {
+          "$ref": "#/$defs/Term",
+          "description": "Replacement value"
+        }
+      },
+      "required": ["target", "value"],
+      "additionalProperties": false
+    },
+    "Term": {
+      "type": "object",
+      "description": "A term in Rego (value, variable, reference, or composite)",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "null",
+            "boolean",
+            "number",
+            "string",
+            "var",
+            "ref",
+            "array",
+            "object",
+            "set",
+            "arraycomprehension",
+            "objectcomprehension",
+            "setcomprehension",
+            "call"
+          ],
+          "description": "Type of term"
+        },
+        "value": {
+          "description": "Value of the term (type depends on term type)",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "$ref": "#/$defs/Array"
+            },
+            {
+              "$ref": "#/$defs/Object"
+            },
+            {
+              "$ref": "#/$defs/Set"
+            },
+            {
+              "$ref": "#/$defs/ArrayComprehension"
+            },
+            {
+              "$ref": "#/$defs/ObjectComprehension"
+            },
+            {
+              "$ref": "#/$defs/SetComprehension"
+            },
+            {
+              "$ref": "#/$defs/Call"
+            }
+          ]
+        }
+      },
+      "required": ["type", "value"],
+      "additionalProperties": false
+    },
+    "Ref": {
+      "type": "array",
+      "description": "A reference path (e.g., data.users[0].name)",
+      "items": {
+        "$ref": "#/$defs/Term"
+      },
+      "minItems": 1
+    },
+    "Array": {
+      "type": "array",
+      "description": "Array literal",
+      "items": {
+        "$ref": "#/$defs/Term"
+      }
+    },
+    "Object": {
+      "type": "array",
+      "description": "Object literal as array of key-value pairs",
+      "items": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/Term"
+        },
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "Set": {
+      "type": "array",
+      "description": "Set literal",
+      "items": {
+        "$ref": "#/$defs/Term"
+      }
+    },
+    "ArrayComprehension": {
+      "type": "object",
+      "description": "Array comprehension [term | body]",
+      "properties": {
+        "term": {
+          "$ref": "#/$defs/Term",
+          "description": "Term to collect"
+        },
+        "body": {
+          "$ref": "#/$defs/Body",
+          "description": "Comprehension body"
+        }
+      },
+      "required": ["term", "body"],
+      "additionalProperties": false
+    },
+    "ObjectComprehension": {
+      "type": "object",
+      "description": "Object comprehension {key: value | body}",
+      "properties": {
+        "key": {
+          "$ref": "#/$defs/Term",
+          "description": "Key term"
+        },
+        "value": {
+          "$ref": "#/$defs/Term",
+          "description": "Value term"
+        },
+        "body": {
+          "$ref": "#/$defs/Body",
+          "description": "Comprehension body"
+        }
+      },
+      "required": ["key", "value", "body"],
+      "additionalProperties": false
+    },
+    "SetComprehension": {
+      "type": "object",
+      "description": "Set comprehension {term | body}",
+      "properties": {
+        "term": {
+          "$ref": "#/$defs/Term",
+          "description": "Term to collect"
+        },
+        "body": {
+          "$ref": "#/$defs/Body",
+          "description": "Comprehension body"
+        }
+      },
+      "required": ["term", "body"],
+      "additionalProperties": false
+    },
+    "Call": {
+      "type": "array",
+      "description": "Function call with operator and arguments",
+      "items": {
+        "$ref": "#/$defs/Term"
+      },
+      "minItems": 1
+    },
+    "Comment": {
+      "type": "object",
+      "description": "Comment in the source code",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Comment text"
+        },
+        "location": {
+          "$ref": "#/$defs/Location",
+          "description": "Location in source"
+        }
+      },
+      "required": ["text"],
+      "additionalProperties": false
+    },
+    "Location": {
+      "type": "object",
+      "description": "Source code location",
+      "properties": {
+        "file": {
+          "type": "string",
+          "description": "File name"
+        },
+        "row": {
+          "type": "integer",
+          "description": "Row number (1-indexed)",
+          "minimum": 1
+        },
+        "col": {
+          "type": "integer",
+          "description": "Column number (1-indexed)",
+          "minimum": 1
+        }
+      },
+      "required": ["row", "col"],
+      "additionalProperties": false
+    },
+    "Annotation": {
+      "type": "object",
+      "description": "Metadata annotation for rules",
+      "properties": {
+        "scope": {
+          "type": "string",
+          "enum": ["rule", "document", "package", "subpackages"],
+          "description": "Annotation scope"
+        },
+        "title": {
+          "type": "string",
+          "description": "Rule title"
+        },
+        "description": {
+          "type": "string",
+          "description": "Rule description"
+        },
+        "organizations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Organizations that defined this rule"
+        },
+        "related_resources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RelatedResource"
+          },
+          "description": "Related resources"
+        },
+        "authors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Author"
+          },
+          "description": "Rule authors"
+        },
+        "schemas": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SchemaAnnotation"
+          },
+          "description": "Schema definitions for input/data"
+        },
+        "custom": {
+          "type": "object",
+          "description": "Custom annotation fields",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "RelatedResource": {
+      "type": "object",
+      "description": "Related resource reference",
+      "properties": {
+        "ref": {
+          "type": "string",
+          "format": "uri",
+          "description": "Resource URI"
+        },
+        "description": {
+          "type": "string",
+          "description": "Resource description"
+        }
+      },
+      "required": ["ref"],
+      "additionalProperties": false
+    },
+    "Author": {
+      "type": "object",
+      "description": "Rule author information",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Author name"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Author email"
+        }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+    "SchemaAnnotation": {
+      "type": "object",
+      "description": "Schema annotation for input or data",
+      "properties": {
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Path to the data (e.g., ['input', 'user'])"
+        },
+        "schema": {
+          "$ref": "#/$defs/SchemaRef",
+          "description": "Schema reference or definition"
+        },
+        "definition": {
+          "type": "object",
+          "description": "Inline JSON Schema definition",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "SchemaRef": {
+      "type": "object",
+      "description": "Reference to a schema",
+      "properties": {
+        "ref": {
+          "type": "string",
+          "format": "uri",
+          "description": "Schema URI reference"
+        }
+      },
+      "required": ["ref"],
+      "additionalProperties": false
+    },
+    "RegoModule": {
+      "type": "object",
+      "description": "Complete Rego module with annotations",
+      "properties": {
+        "package": {
+          "$ref": "#/$defs/Package"
+        },
+        "imports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Import"
+          }
+        },
+        "policy": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Rule"
+          }
+        },
+        "annotations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Annotation"
+          }
+        },
+        "comments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Comment"
+          }
+        }
+      },
+      "required": ["package"],
+      "additionalProperties": false
+    },
+    "BuiltinFunction": {
+      "type": "object",
+      "description": "Built-in function definition",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Function name"
+        },
+        "decl": {
+          "$ref": "#/$defs/FunctionDecl",
+          "description": "Function declaration"
+        },
+        "description": {
+          "type": "string",
+          "description": "Function description"
+        }
+      },
+      "required": ["name", "decl"],
+      "additionalProperties": false
+    },
+    "FunctionDecl": {
+      "type": "object",
+      "description": "Function declaration with type signature",
+      "properties": {
+        "args": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TypeSpec"
+          },
+          "description": "Argument types"
+        },
+        "result": {
+          "$ref": "#/$defs/TypeSpec",
+          "description": "Result type"
+        },
+        "variadic": {
+          "type": "boolean",
+          "description": "Whether function accepts variable arguments",
+          "default": false
+        }
+      },
+      "required": ["result"],
+      "additionalProperties": false
+    },
+    "TypeSpec": {
+      "type": "object",
+      "description": "Type specification for Rego values",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "null",
+            "boolean",
+            "number",
+            "string",
+            "array",
+            "object",
+            "set",
+            "any"
+          ],
+          "description": "Base type"
+        },
+        "of": {
+          "$ref": "#/$defs/TypeSpec",
+          "description": "Element type for array/set"
+        },
+        "static": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TypeProperty"
+          },
+          "description": "Object properties for object types"
+        },
+        "dynamic": {
+          "$ref": "#/$defs/TypeSpec",
+          "description": "Value type for dynamic object keys"
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "TypeProperty": {
+      "type": "object",
+      "description": "Property definition for object types",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Property key"
+        },
+        "value": {
+          "$ref": "#/$defs/TypeSpec",
+          "description": "Property value type"
+        }
+      },
+      "required": ["key", "value"],
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Module"
+    },
+    {
+      "$ref": "#/$defs/RegoModule"
+    }
+  ]
+}

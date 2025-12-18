@@ -1,0 +1,351 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nlweb.example.com/schema/nlweb-protocol.json",
+  "title": "NLWeb Protocol",
+  "description": "JSON Schema for NLWeb Protocol API requests and responses",
+  "$defs": {
+    "Query": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Natural language query from user. (required)"
+        },
+        "site": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Website or domain to search. May include one or many. (optional)"
+        },
+        "location": {
+          "type": "string",
+          "description": "Geographic constraint of query (optional)"
+        },
+        "price": {
+          "type": "string",
+          "description": "price range or constraint (optional)"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of item requested (e.g., movie, recipe, customer, etc.)"
+        }
+      },
+      "required": ["text"],
+      "additionalProperties": true
+    },
+    "Context": {
+      "type": "object",
+      "properties": {
+        "prev": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Array of previous queries in the conversation. (optional)"
+        },
+        "text": {
+          "type": "string",
+          "description": "Free-form text paragraph describing the broader context (optional)"
+        },
+        "memory": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Persistent information about the user's preferences, constraints, or characteristics"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Return_Response": {
+      "type": "object",
+      "properties": {
+        "streaming": {
+          "type": "boolean",
+          "default": true,
+          "description": "Boolean indicating whether streaming response is desired. Defaults to true. (true or false)"
+        },
+        "format": {
+          "type": "string",
+          "description": "Response format specification, e.g., chatgpt_app, etc. (optional)"
+        },
+        "mode": {
+          "type": "string",
+          "description": "Response mode such as list, summarize, etc. (optional)"
+        },
+        "lang": {
+          "type": "string",
+          "description": "Language code (e.g., en, fr, es) for the response. (optional)"
+        },
+        "client_type": {
+          "type": "string",
+          "enum": ["mobile", "desktop", "tablet", "web"],
+          "description": "Type of client making the request, for example, mobile, desktop, etc. (optional)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Meta": {
+      "type": "object",
+      "properties": {
+        "conversation_id": {
+          "type": "string",
+          "description": "Identifier for tracking the conversation across multiple queries. (optional)"
+        },
+        "api_version": {
+          "type": "string",
+          "description": "API version number being used (optional)"
+        },
+        "request_id": {
+          "type": "string",
+          "description": "Request ID to check status of a previous Promise response. Only used when polling for async results. (optional)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AskRequest": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "$ref": "#/$defs/Query",
+          "description": "Specifies the user's current request and associated query parameters in natural language. (required)"
+        },
+        "context": {
+          "$ref": "#/$defs/Context",
+          "description": "Provides contextual information about the query to help the agent better understand and respond to the request. Context can be communicated in multiple ways depending on what information is available and relevant. (optional)"
+        },
+        "return_response": {
+          "$ref": "#/$defs/Return_Response",
+          "description": "Specifies expectations and requirements for how the return response should be formatted and delivered. (optional)"
+        },
+        "meta": {
+          "$ref": "#/$defs/Meta",
+          "description": "Contains metadata about the request itself, including requested version number of the protocol and tracking information."
+        }
+      },
+      "required": ["query"],
+      "additionalProperties": false
+    },
+    "WhoRequest": {
+      "type": "object",
+      "description": "Request for NLWeb Who 'Agent Finder' endpoint for agent discovery. The Who endpoint helps discovery which agents/tools can answer a given question, allowing for agent selection before making an Ask request.",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Natural language query for agent discovery (required)"
+        },
+        "streaming": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable streaming response. Defaults to true. (optional)"
+        },
+        "conversation_id": {
+          "type": "string",
+          "description": "Conversational identifier - pass-through only when there are simultaneous conversations to track (optional)"
+        },
+        "constr": {
+          "type": "object",
+          "description": "Additional Constraints (filters, capabilities, etc.)",
+          "additionalProperties": true
+        }
+      },
+      "required": ["query"],
+      "additionalProperties": false
+    },
+    "AskResponseMeta": {
+      "type": "object",
+      "description": "Metadata for NLWeb 'Ask' response format",
+      "properties": {
+        "conversation_id": {
+          "type": "string",
+          "description": "Conversational identifier - pass-through only when there are simultaneous conversations to track (optional)"
+        },
+        "response_type": {
+          "type": "string",
+          "enum": ["Answer", "Elicitation", "Promise"],
+          "description": "Describes the type of response being sent. Answer responds to the user query. Elicitation allows the server to request additional information to carry out the task, and Promise allows for async task status checks. (optional)"
+        },
+        "request_id": {
+          "type": "string",
+          "description": "Request ID for tracking asynchronous responses (optional)"
+        },
+        "version": {
+          "type": "string",
+          "description": "protocol version (optional)"
+        }
+      },
+      "additionalProperties": true
+    },
+    "WhoResponseMeta": {
+      "type": "object",
+      "description": "Metadata for NLWeb 'Who' response format",
+      "properties": {
+        "conversation_id": {
+          "type": "string",
+          "description": "conversational identifier - pass-through only when there are simultaneous conversations to track (optional)"
+        },
+        "version": {
+          "type": "string",
+          "description": "protocol version (optional)"
+        }
+      },
+      "additionalProperties": true
+    },
+    "TextContent": {
+      "type": "object",
+      "description": "Natural language text content item (requires at least one)",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "text",
+          "description": "Must be \"text\" (required)"
+        },
+        "text": {
+          "type": "string",
+          "description": "Natural language content (required)"
+        }
+      },
+      "required": ["type", "text"],
+      "additionalProperties": false
+    },
+    "Resource": {
+      "type": "object",
+      "description": "Container for resource data with optional UI rendering info",
+      "properties": {
+        "uri": {
+          "type": "string",
+          "description": "Resource identifier/template reference, e.g., ui://widget/restaurant-card.html (optional)"
+        },
+        "mimeType": {
+          "type": "string",
+          "description": "MIME type, e.g., text/html+skybridge for ChatGPT Apps. (optional)"
+        },
+        "text": {
+          "type": "string",
+          "description": "Raw content, typically HTML for widget rendering (optional)"
+        },
+        "data": {
+          "description": "Structured data payload. Can be a single object or an array of objects, potentially of different types. (required)",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": true
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          ]
+        }
+      },
+      "required": ["data"],
+      "additionalProperties": false
+    },
+    "Agent": {
+      "type": "object",
+      "description": "Agent/tool description returned by Who endpoint",
+      "properties": {
+        "@type": {
+          "type": "string",
+          "description": "Type of agent, e.g., \"Search Agent\" or \"Analytics Agent\". (required)"
+        },
+        "agentSpec": {
+          "type": "object",
+          "description": "Agent specification - structure will depend on agent type (required)",
+          "additionalProperties": true
+        }
+      },
+      "required": ["@type", "agentSpec"],
+      "additionalProperties": false
+    },
+    "ResourceContent": {
+      "type": "object",
+      "description": "Resource content item with structured data",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "resource",
+          "description": "must be \"resource\""
+        },
+        "resource": {
+          "$ref": "#/$defs/Resource",
+          "description": "Resource details"
+        }
+      },
+      "required": ["type", "resource"],
+      "additionalProperties": false
+    },
+    "AskResponse": {
+      "type": "object",
+      "description": "Complete NLWeb Ask Response format",
+      "properties": {
+        "_meta": {
+          "$ref": "#/$defs/AskResponseMeta",
+          "description": "Metadata about the response"
+        },
+        "content": {
+          "type": "array",
+          "description": "Array of content items (text and/or resource). Constraints: Must contain at least one item; Must contain at least one TextContent item; May contain multiple items of each type in any order. Note: The requirement for at least one TextContent item must be validated by implementations, as this constraint cannot be expressed in the type system.",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TextContent"
+              },
+              {
+                "$ref": "#/$defs/ResourceContent"
+              }
+            ]
+          }
+        }
+      },
+      "required": ["_meta", "content"],
+      "additionalProperties": false
+    },
+    "WhoResponse": {
+      "type": "object",
+      "description": "NLWeb Who Response",
+      "properties": {
+        "_meta": {
+          "$ref": "#/$defs/WhoResponseMeta",
+          "description": "Metadata about the response"
+        },
+        "content": {
+          "type": "array",
+          "description": "Array of content items containing agent descriptions. Constraints: Must contain at least one item; Typically contains ResourceContent with Agent data; May include TextContent for descriptions.",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TextContent"
+              },
+              {
+                "$ref": "#/$defs/ResourceContent"
+              }
+            ]
+          }
+        }
+      },
+      "required": ["_meta", "content"],
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/AskRequest"
+    },
+    {
+      "$ref": "#/$defs/WhoRequest"
+    },
+    {
+      "$ref": "#/$defs/AskResponse"
+    },
+    {
+      "$ref": "#/$defs/WhoResponse"
+    }
+  ]
+}

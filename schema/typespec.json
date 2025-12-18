@@ -1,0 +1,629 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://typespec.io/schemas/typespec-language.json",
+  "title": "TypeSpec Language Schema",
+  "description": "JSON Schema for TypeSpec language definitions",
+  "type": "object",
+  "properties": {
+    "namespaces": {
+      "type": "array",
+      "description": "Top-level namespaces in the TypeSpec definition",
+      "items": {
+        "$ref": "#/definitions/namespace"
+      }
+    },
+    "models": {
+      "type": "array",
+      "description": "Top-level model definitions",
+      "items": {
+        "$ref": "#/definitions/model"
+      }
+    },
+    "operations": {
+      "type": "array",
+      "description": "Top-level operation definitions",
+      "items": {
+        "$ref": "#/definitions/operation"
+      }
+    },
+    "enums": {
+      "type": "array",
+      "description": "Enumeration definitions",
+      "items": {
+        "$ref": "#/definitions/enum"
+      }
+    },
+    "unions": {
+      "type": "array",
+      "description": "Union type definitions",
+      "items": {
+        "$ref": "#/definitions/union"
+      }
+    },
+    "interfaces": {
+      "type": "array",
+      "description": "Interface definitions",
+      "items": {
+        "$ref": "#/definitions/interface"
+      }
+    },
+    "aliases": {
+      "type": "array",
+      "description": "Type alias definitions",
+      "items": {
+        "$ref": "#/definitions/alias"
+      }
+    },
+    "decorators": {
+      "type": "array",
+      "description": "Decorator definitions",
+      "items": {
+        "$ref": "#/definitions/decorator"
+      }
+    },
+    "imports": {
+      "type": "array",
+      "description": "Import statements",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "definitions": {
+    "namespace": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The namespace name"
+        },
+        "decorators": {
+          "type": "array",
+          "description": "Decorators applied to the namespace",
+          "items": {
+            "$ref": "#/definitions/decoratorApplication"
+          }
+        },
+        "models": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/model"
+          }
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/operation"
+          }
+        },
+        "enums": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/enum"
+          }
+        },
+        "unions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/union"
+          }
+        },
+        "interfaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/interface"
+          }
+        },
+        "subNamespaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/namespace"
+          }
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The model name"
+        },
+        "decorators": {
+          "type": "array",
+          "description": "Decorators applied to the model",
+          "items": {
+            "$ref": "#/definitions/decoratorApplication"
+          }
+        },
+        "extends": {
+          "type": "string",
+          "description": "Base model this model extends"
+        },
+        "is": {
+          "type": "array",
+          "description": "Template arguments for model instantiation",
+          "items": {
+            "type": "string"
+          }
+        },
+        "templateParameters": {
+          "type": "array",
+          "description": "Template parameters for generic models",
+          "items": {
+            "$ref": "#/definitions/templateParameter"
+          }
+        },
+        "properties": {
+          "type": "array",
+          "description": "Model properties",
+          "items": {
+            "$ref": "#/definitions/property"
+          }
+        },
+        "spreadProperties": {
+          "type": "array",
+          "description": "Models whose properties are spread into this model",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "property": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Property name"
+        },
+        "type": {
+          "$ref": "#/definitions/typeReference",
+          "description": "Property type"
+        },
+        "optional": {
+          "type": "boolean",
+          "description": "Whether the property is optional",
+          "default": false
+        },
+        "decorators": {
+          "type": "array",
+          "description": "Decorators applied to the property",
+          "items": {
+            "$ref": "#/definitions/decoratorApplication"
+          }
+        },
+        "defaultValue": {
+          "description": "Default value for the property"
+        }
+      }
+    },
+    "operation": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Operation name"
+        },
+        "decorators": {
+          "type": "array",
+          "description": "Decorators applied to the operation",
+          "items": {
+            "$ref": "#/definitions/decoratorApplication"
+          }
+        },
+        "parameters": {
+          "type": "array",
+          "description": "Operation parameters",
+          "items": {
+            "$ref": "#/definitions/parameter"
+          }
+        },
+        "returnType": {
+          "$ref": "#/definitions/typeReference",
+          "description": "Return type of the operation"
+        },
+        "templateParameters": {
+          "type": "array",
+          "description": "Template parameters for generic operations",
+          "items": {
+            "$ref": "#/definitions/templateParameter"
+          }
+        }
+      }
+    },
+    "parameter": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Parameter name"
+        },
+        "type": {
+          "$ref": "#/definitions/typeReference",
+          "description": "Parameter type"
+        },
+        "optional": {
+          "type": "boolean",
+          "description": "Whether the parameter is optional",
+          "default": false
+        },
+        "decorators": {
+          "type": "array",
+          "description": "Decorators applied to the parameter",
+          "items": {
+            "$ref": "#/definitions/decoratorApplication"
+          }
+        }
+      }
+    },
+    "enum": {
+      "type": "object",
+      "required": ["name", "members"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Enum name"
+        },
+        "decorators": {
+          "type": "array",
+          "description": "Decorators applied to the enum",
+          "items": {
+            "$ref": "#/definitions/decoratorApplication"
+          }
+        },
+        "members": {
+          "type": "array",
+          "description": "Enum members",
+          "items": {
+            "$ref": "#/definitions/enumMember"
+          }
+        }
+      }
+    },
+    "enumMember": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Enum member name"
+        },
+        "value": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "description": "Enum member value"
+        },
+        "decorators": {
+          "type": "array",
+          "description": "Decorators applied to the enum member",
+          "items": {
+            "$ref": "#/definitions/decoratorApplication"
+          }
+        }
+      }
+    },
+    "union": {
+      "type": "object",
+      "required": ["name", "variants"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Union name"
+        },
+        "decorators": {
+          "type": "array",
+          "description": "Decorators applied to the union",
+          "items": {
+            "$ref": "#/definitions/decoratorApplication"
+          }
+        },
+        "variants": {
+          "type": "array",
+          "description": "Union variants",
+          "items": {
+            "$ref": "#/definitions/unionVariant"
+          }
+        },
+        "templateParameters": {
+          "type": "array",
+          "description": "Template parameters for generic unions",
+          "items": {
+            "$ref": "#/definitions/templateParameter"
+          }
+        }
+      }
+    },
+    "unionVariant": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Variant name (optional)"
+        },
+        "type": {
+          "$ref": "#/definitions/typeReference",
+          "description": "Variant type"
+        },
+        "decorators": {
+          "type": "array",
+          "description": "Decorators applied to the variant",
+          "items": {
+            "$ref": "#/definitions/decoratorApplication"
+          }
+        }
+      }
+    },
+    "interface": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Interface name"
+        },
+        "decorators": {
+          "type": "array",
+          "description": "Decorators applied to the interface",
+          "items": {
+            "$ref": "#/definitions/decoratorApplication"
+          }
+        },
+        "extends": {
+          "type": "array",
+          "description": "Interfaces this interface extends",
+          "items": {
+            "type": "string"
+          }
+        },
+        "operations": {
+          "type": "array",
+          "description": "Operations defined in the interface",
+          "items": {
+            "$ref": "#/definitions/operation"
+          }
+        },
+        "templateParameters": {
+          "type": "array",
+          "description": "Template parameters for generic interfaces",
+          "items": {
+            "$ref": "#/definitions/templateParameter"
+          }
+        }
+      }
+    },
+    "alias": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Alias name"
+        },
+        "type": {
+          "$ref": "#/definitions/typeReference",
+          "description": "The type being aliased"
+        },
+        "templateParameters": {
+          "type": "array",
+          "description": "Template parameters for generic aliases",
+          "items": {
+            "$ref": "#/definitions/templateParameter"
+          }
+        },
+        "decorators": {
+          "type": "array",
+          "description": "Decorators applied to the alias",
+          "items": {
+            "$ref": "#/definitions/decoratorApplication"
+          }
+        }
+      }
+    },
+    "decorator": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Decorator name (without @ symbol)"
+        },
+        "target": {
+          "type": "array",
+          "description": "Valid targets for this decorator",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Namespace",
+              "Model",
+              "ModelProperty",
+              "Operation",
+              "Interface",
+              "Enum",
+              "EnumMember",
+              "Union",
+              "UnionVariant",
+              "Scalar"
+            ]
+          }
+        },
+        "parameters": {
+          "type": "array",
+          "description": "Decorator parameters",
+          "items": {
+            "$ref": "#/definitions/decoratorParameter"
+          }
+        }
+      }
+    },
+    "decoratorParameter": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Parameter name"
+        },
+        "type": {
+          "type": "string",
+          "description": "Parameter type"
+        },
+        "optional": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "decoratorApplication": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Decorator name (with or without @ symbol)"
+        },
+        "arguments": {
+          "type": "array",
+          "description": "Arguments passed to the decorator",
+          "items": {}
+        }
+      }
+    },
+    "typeReference": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "name"],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": ["reference"]
+            },
+            "name": {
+              "type": "string",
+              "description": "Type name"
+            },
+            "arguments": {
+              "type": "array",
+              "description": "Template arguments",
+              "items": {
+                "$ref": "#/definitions/typeReference"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": ["array"]
+            },
+            "elementType": {
+              "$ref": "#/definitions/typeReference"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": ["record"]
+            },
+            "valueType": {
+              "$ref": "#/definitions/typeReference"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "types"],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": ["union", "intersection"]
+            },
+            "types": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/typeReference"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": ["literal"]
+            },
+            "value": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": ["tuple"]
+            },
+            "elements": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/typeReference"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "templateParameter": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Template parameter name"
+        },
+        "constraint": {
+          "$ref": "#/definitions/typeReference",
+          "description": "Constraint on the template parameter"
+        },
+        "default": {
+          "$ref": "#/definitions/typeReference",
+          "description": "Default value for the template parameter"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,664 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "API Commons",
+    "description": "An aggregate schema combining several API Commons schemas including plans, rate limits, change logs, policies, rules, lifecycle stages, experiences, guidance, road maps, and interface licenses. This provides a comprehensive machine-readable framework for defining and governing APIs.",
+    "anyOf": [
+        {
+            "$ref": "#/$defs/Plans"
+        },
+        {
+            "$ref": "#/$defs/RateLimits"
+        },
+        {
+            "$ref": "#/$defs/ChangeLog"
+        },
+        {
+            "$ref": "#/$defs/Policy"
+        },
+        {
+            "$ref": "#/$defs/Rules"
+        },
+        {
+            "$ref": "#/$defs/Lifecycle"
+        },
+        {
+            "$ref": "#/$defs/Experience"
+        },
+        {
+            "$ref": "#/$defs/Guidance"
+        },
+        {
+            "$ref": "#/$defs/RoadMap"
+        },
+        {
+            "$ref": "#/$defs/InterfaceLicense"
+        }
+    ],
+    "$defs": {
+        "Plans": {
+            "type": "array",
+            "title": "Plans",
+            "description": "This is a schema for defining the plans associated with API consumption, providing a machine-readable way to describe plans, pricing, rate limiting, and other features.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "The unique identifier for an API plan."
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "The title or name that is defining the API plan."
+                    },
+                    "type": {
+                        "type": "string",
+                        "description": "The type of the plan."
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "A more detailed description of what an API plan is."
+                    },
+                    "entries": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "label": {
+                                    "type": "string",
+                                    "description": "A descriptive label for the entry."
+                                },
+                                "description": {
+                                    "type": "string",
+                                    "description": "A more detailed over for the entry."
+                                },
+                                "name": {
+                                    "type": "string",
+                                    "description": "The name of the entry."
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "description": "The type of the entry."
+                                },
+                                "metric": {
+                                    "type": "string",
+                                    "description": "What metric is used to measure entry."
+                                },
+                                "limit": {
+                                    "type": "number",
+                                    "description": "The rate limit applied to this entry."
+                                },
+                                "timeFrame": {
+                                    "type": "string",
+                                    "description": "What time frame constrains the entry."
+                                },
+                                "geo": {
+                                    "type": "string",
+                                    "description": "Any geographic region that applies to entry."
+                                },
+                                "domains": {
+                                    "type": "array",
+                                    "description": "The domains that apply to this entry.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "unit": {
+                                    "type": "integer",
+                                    "description": "The unit of measurement applied to entry."
+                                },
+                                "price": {
+                                    "type": "string",
+                                    "description": "The price being used to monetize entry."
+                                },
+                                "userMultiplied": {
+                                    "type": "boolean",
+                                    "description": "Whether the entry is multiplied by user count."
+                                }
+                            },
+                            "required": [
+                                "label",
+                                "description",
+                                "metric",
+                                "limit",
+                                "timeFrame",
+                                "geo",
+                                "unit",
+                                "price"
+                            ]
+                        }
+                    },
+                    "elements": {
+                        "type": "array",
+                        "description": "An array of elements applied to tier.",
+                        "items": {
+                            "type": "object",
+                            "description": "Each individual element that is applied.",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "The name of the element in tier."
+                                }
+                            },
+                            "required": [
+                                "name"
+                            ]
+                        }
+                    },
+                    "changeLog": {
+                        "type": "array",
+                        "description": "A log of changes related to this plan.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "date": {
+                                    "type": "string",
+                                    "description": "The target date for the API change log item."
+                                },
+                                "name": {
+                                    "type": "string",
+                                    "description": "The name for the API change log item."
+                                },
+                                "image": {
+                                    "type": "string",
+                                    "description": "The image for the API change log item."
+                                },
+                                "link": {
+                                    "type": "string",
+                                    "description": "The link for the API change log item."
+                                },
+                                "tags": {
+                                    "type": "array",
+                                    "description": "The tags for the API change log item.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "policies": {
+                        "type": "array",
+                        "description": "The policies that apply to this plan.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "The name to accurately describe the policy."
+                                },
+                                "slug": {
+                                    "type": "string",
+                                    "description": "A slugified version of the policy name."
+                                },
+                                "description": {
+                                    "type": "string",
+                                    "description": "A more detailed description of a policy."
+                                },
+                                "scope": {
+                                    "type": "string",
+                                    "description": "What scope of API operations does it apply.",
+                                    "enum": [
+                                        "Business Contract",
+                                        "Technical Contract"
+                                    ]
+                                },
+                                "property": {
+                                    "type": "string",
+                                    "description": "A JSON Path pointing to a specific property."
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "description": "The APIs.json property type that applies."
+                                },
+                                "guidance": {
+                                    "type": "string",
+                                    "description": "A reference to guidance in support of policy."
+                                },
+                                "image": {
+                                    "type": "string",
+                                    "description": "A visual image or icon representing policy."
+                                },
+                                "policies": {
+                                    "type": "array",
+                                    "description": "A listing of related policies for a policy.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "tags": {
+                                    "type": "array",
+                                    "description": "A listing of tags that are applied to policy.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "experiences": {
+                                    "type": "array",
+                                    "description": "The experiences impacted by a policy existing.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "rules": {
+                                    "type": "array",
+                                    "description": "The Spectral rules that automate a policy.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "research": {
+                                    "type": "array",
+                                    "description": "References to any research conducted to inform a policy.",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {
+                                                "type": "string",
+                                                "description": "A name describing the research conducted."
+                                            },
+                                            "description": {
+                                                "type": "string",
+                                                "description": "More detail regarding the value of research."
+                                            },
+                                            "url": {
+                                                "type": "string",
+                                                "description": "A URL reference to support the research."
+                                            }
+                                        },
+                                        "required": [
+                                            "name",
+                                            "description",
+                                            "url"
+                                        ]
+                                    }
+                                },
+                                "discussion": {
+                                    "type": "string",
+                                    "description": "A URL to where the discussion for a policy is occurring."
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "slug",
+                                "description",
+                                "scope",
+                                "property",
+                                "type",
+                                "guidance",
+                                "image",
+                                "policies",
+                                "tags",
+                                "experiences",
+                                "rules",
+                                "research",
+                                "discussion"
+                            ]
+                        }
+                    },
+                    "rules": {
+                        "type": "array",
+                        "description": "The governance rules that apply to this plan.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "The name for the governance rule."
+                                },
+                                "slug": {
+                                    "type": "string",
+                                    "description": "A slugified version of the rule name."
+                                },
+                                "description": {
+                                    "type": "string",
+                                    "description": "A more detailed overview of the rule."
+                                },
+                                "engine": {
+                                    "type": "string",
+                                    "description": "Which linting engine is being applied.",
+                                    "enum": [
+                                        "SPECTRAL"
+                                    ]
+                                },
+                                "specification": {
+                                    "type": "string",
+                                    "description": "The specification which the rule is applied."
+                                },
+                                "specificationUrl": {
+                                    "type": "string",
+                                    "description": "The URL to the specification page that applies."
+                                },
+                                "guidance": {
+                                    "type": "string",
+                                    "description": "The type of guidance being provided for rule."
+                                },
+                                "guidanceUrl": {
+                                    "type": "string",
+                                    "description": "The URL to the guidance page being applied."
+                                },
+                                "scope": {
+                                    "type": "string",
+                                    "description": "The scope of the rule being applied.",
+                                    "enum": [
+                                        "error",
+                                        "info",
+                                        "warn",
+                                        "hint"
+                                    ]
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "description": "The type of rule being applied.",
+                                    "enum": [
+                                        "Default",
+                                        "Custom"
+                                    ]
+                                },
+                                "tags": {
+                                    "type": "array",
+                                    "description": "A key word or phrase applied to rule.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "rule": {
+                                    "description": "The rest of this is just Spectral JSON Schema.",
+                                    "$ref": "#/$defs/Rule"
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "slug",
+                                "description",
+                                "engine",
+                                "specification",
+                                "specificationUrl",
+                                "guidance",
+                                "guidanceUrl",
+                                "scope",
+                                "type",
+                                "tags",
+                                "rule"
+                            ]
+                        }
+                    },
+                    "lifecycle": {
+                        "type": "object",
+                        "description": "A machine-readable scaffolding for the API lifecycle.",
+                        "patternProperties": {
+                            "^(label_name_[0-9]+)+$": {
+                                "$ref": "#/$defs/Stage"
+                            }
+                        }
+                    },
+                    "experiences": {
+                        "type": "array",
+                        "description": "The common experiences across API operations.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "The name of the experience being defined."
+                                },
+                                "slug": {
+                                    "type": "string",
+                                    "description": "A slugified version of the experience name."
+                                },
+                                "image": {
+                                    "type": "string",
+                                    "description": "An image to represent the experience."
+                                },
+                                "description": {
+                                    "type": "string",
+                                    "description": "A more detailed version of the experience."
+                                },
+                                "tags": {
+                                    "type": "array",
+                                    "description": "The keywords and phrases applied to experience.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "properties": {
+                                    "description": "The APIs.json properties that apply to experience.",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "slug",
+                                "image",
+                                "description",
+                                "tags",
+                                "properties"
+                            ]
+                        }
+                    },
+                    "guidance": {
+                        "type": "array",
+                        "description": "Machine-readable guidance meant for humans to consume.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "title": {
+                                    "type": "string",
+                                    "description": "The title of the guidance being offered."
+                                },
+                                "subtitle": {
+                                    "type": "string",
+                                    "description": "A short summary of the guidance being offered."
+                                },
+                                "tags": {
+                                    "type": "array",
+                                    "description": "The key words or phrases applied to guidance.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "author": {
+                                    "type": "string",
+                                    "description": "The human author of the guidance."
+                                },
+                                "visibility": {
+                                    "type": "string",
+                                    "description": "Whether it is public or private."
+                                },
+                                "business": {
+                                    "type": "string",
+                                    "description": "The business implications of the guidance."
+                                },
+                                "technology": {
+                                    "type": "string",
+                                    "description": "What technology is involved with guidance."
+                                },
+                                "policies": {
+                                    "type": "string",
+                                    "description": "What policies apply to area of guidance."
+                                },
+                                "people": {
+                                    "type": "string",
+                                    "description": "What are the human impacts of this guidance."
+                                }
+                            },
+                            "required": [
+                                "title",
+                                "subtitle",
+                                "tags",
+                                "author",
+                                "visibility",
+                                "business",
+                                "technology",
+                                "policies",
+                                "people"
+                            ]
+                        }
+                    },
+                    "roadMap": {
+                        "type": "array",
+                        "description": "A road map of planned features and improvements for this plan.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "date": {
+                                    "type": "string",
+                                    "description": "The target date for the API road map item."
+                                },
+                                "name": {
+                                    "type": "string",
+                                    "description": "The name for the API road map item."
+                                },
+                                "image": {
+                                    "type": "string",
+                                    "description": "The image for the API road map item."
+                                },
+                                "link": {
+                                    "type": "string",
+                                    "description": "The link for the API road map item."
+                                },
+                                "tags": {
+                                    "type": "array",
+                                    "description": "The tags for the API road map item.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "interfaceLicense": {
+                        "type": "object",
+                        "description": "Interface license information for APIs covered by this plan.",
+                        "properties": {
+                            "apis": {
+                                "type": "array",
+                                "description": "A listing of APIs that are covered by the interface license.",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {
+                                            "type": "string",
+                                            "description": "A plain language name for the API."
+                                        },
+                                        "description": {
+                                            "type": "string",
+                                            "description": "A plain language description for the API."
+                                        },
+                                        "image": {
+                                            "type": "string",
+                                            "description": "A relevant image representation for the API."
+                                        },
+                                        "tags": {
+                                            "type": "array",
+                                            "description": "Keywords that are applied to the API.",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "licenses": {
+                                            "type": "array",
+                                            "description": "A set of license to apply to an API.",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "type": {
+                                                        "type": "string",
+                                                        "description": "The type of the license."
+                                                    },
+                                                    "license": {
+                                                        "type": "string",
+                                                        "description": "The license being applied to the API."
+                                                    },
+                                                    "attribution": {
+                                                        "type": "string",
+                                                        "description": "The attribution for the license type."
+                                                    },
+                                                    "url": {
+                                                        "type": "string",
+                                                        "description": "The URL reference where the license will"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "type",
+                                                    "license",
+                                                    "attribution",
+                                                    "url"
+                                                ]
+                                            }
+                                        },
+                                        "definitions": {
+                                            "type": "array",
+                                            "description": "Machine-readable definitions that define the API.",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "type": {
+                                                        "type": "string",
+                                                        "description": "The type of definition being referenced."
+                                                    },
+                                                    "url": {
+                                                        "type": "string",
+                                                        "description": "A URL for the definition of the API."
+                                                    }
+                                                },
+                                                "required": [
+                                                    "type",
+                                                    "url"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "name",
+                                        "description",
+                                        "image",
+                                        "tags",
+                                        "licenses",
+                                        "definitions"
+                                    ]
+                                }
+                            },
+                            "tags": {
+                                "type": "array",
+                                "description": "Relevant words that describe this API licensing.",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "updated": {
+                                "type": "string",
+                                "description": "The timestamp that applies to when license is updated."
+                            }
+                        },
+                        "required": [
+                            "apis",
+                            "tags",
+                            "updated"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "description",
+                    "entries",
+                    "elements"
+                ]
+            }
+        },
+        "RateLimits": {
+            "type": "object",
+            "title": "Rate Limits",
+            "description": "Schema for defining rate limits and consumption metrics.",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "T"
+                }
+            }
+        }
+    }
+}
