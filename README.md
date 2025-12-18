@@ -27,7 +27,7 @@ Be capable of understanding the overlap across multiple interface specifications
 ---
 
 ## Agent 2 Agent
-The Agent2Agent (A2A) Protocol is an open standard for communication and interoperability among independent—often opaque—AI agent systems. Because agents may be built with different frameworks, languagesm and vendors, A2A provides a common language and interaction model.
+The Agent2Agent (A2A) Protocol is an open standard for communication and interoperability among independent, often opaque, AI agent systems. Because agents may be built with different frameworks, languagesm and vendors, A2A provides a common language and interaction model.
 
 ### Operational Properties
 I wanted to be able to understand how the Agent 2 Agent specification operates.
