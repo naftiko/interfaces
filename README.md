@@ -813,8 +813,7 @@ I wanted to flatten and understand all the properties of the AsyncAPI specificat
 - Incrementings
 - Incrementals
 - Indicators
-- Infos
-- Infoextensions
+- Info
 - Injects
 - Inlines
 - Integers
@@ -1178,7 +1177,7 @@ I wanted to flatten and understand all the properties of the Model Context Proto
 - Ats
 - Audiences
 - Audios
-- Augmenteds
+- Augmented
 - Bases
 - Blobs
 - Blocks
@@ -1953,7 +1952,6 @@ I wanted to flatten and understand all the properties of the Microcks APIExample
 - Names
 - Objects
 - Operations
-- Operations
 - Pairs
 - Parameters
 - Payloads
@@ -2097,6 +2095,35 @@ I wanted to flatten and understand all the properties of the FinOps Focus specif
 - Usage
 - Value
 - Zone
+
+## JSON RPC 2.0
+JSON-RPC is a stateless, light-weight remote procedure call (RPC) protocol. Primarily this specification defines several data structures and the rules around their processing. It is transport agnostic in that the concepts can be used within the same process, over sockets, over http, or in many various message passing environments. It uses JSON (RFC 4627) as data format.
+
+### Operational Properties
+I wanted to be able to understand how the JSON RPC specification operates.
+
+- **Website** - https://www.jsonrpc.org/specification
+
+### Specification Priorities
+I wanted to flatten and understand all the properties of the JSON RPC specification.
+
+- jsonrpc-version
+- id
+- method
+- params
+- error
+- request
+- notification
+- response-success
+- response-error
+- response
+- batch-request
+- batch-response
+- code (within error)
+- message (within error)
+- data (within error)
+- jsonrpc (within nested objects)
+- result (within response-success)
 
 ---
 
