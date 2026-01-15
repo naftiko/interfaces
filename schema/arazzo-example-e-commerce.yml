@@ -1,0 +1,409 @@
+arazzo: "1.0.0"
+info:
+  title: E-Commerce Order Processing Workflows
+  summary: Complete order lifecycle management workflows
+  description: |
+    Comprehensive workflows for e-commerce order processing including
+    cart management, checkout, payment processing, and order fulfillment.
+    Includes proper error handling, retries, and rollback mechanisms.
+  version: "2.0.0"
+
+sourceDescriptions:
+  - name: catalog-api
+    url: https://api.shop.example.com/catalog/v2/openapi.yaml
+    type: openapi
+  - name: cart-api
+    url: https://api.shop.example.com/cart/v2/openapi.yaml
+    type: openapi
+  - name: payment-api
+    url: https://api.shop.example.com/payments/v3/openapi.yaml
+    type: openapi
+  - name: order-api
+    url: https://api.shop.example.com/orders/v2/openapi.yaml
+    type: openapi
+  - name: inventory-api
+    url: https://api.shop.example.com/inventory/v1/openapi.yaml
+    type: openapi
+  - name: shipping-api
+    url: https://api.shop.example.com/shipping/v2/openapi.yaml
+    type: openapi
+
+workflows:
+  - workflowId: add-to-cart
+    summary: Add product to shopping cart
+    description: Validates product availability and adds it to the user's cart.
+    inputs:
+      type: object
+      required:
+        - cartId
+        - productId
+        - quantity
+      properties:
+        cartId:
+          type: string
+          description: Shopping cart identifier
+        productId:
+          type: string
+          description: Product identifier
+        quantity:
+          type: integer
+          minimum: 1
+          description: Quantity to add
+    steps:
+      - stepId: check-product-exists
+        operationId: catalog-api.getProduct
+        parameters:
+          - name: productId
+            in: path
+            value: $inputs.productId
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          productName: $response.body.name
+          unitPrice: $response.body.price
+          inStock: $response.body.inventory.available
+
+      - stepId: verify-inventory
+        operationId: inventory-api.checkAvailability
+        parameters:
+          - name: productId
+            in: path
+            value: $inputs.productId
+          - name: quantity
+            in: query
+            value: $inputs.quantity
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body.available == true
+        onFailure:
+          - name: insufficient-stock
+            type: end
+            criteria:
+              - condition: $response.body.available == false
+
+      - stepId: add-item-to-cart
+        operationId: cart-api.addItem
+        parameters:
+          - name: cartId
+            in: path
+            value: $inputs.cartId
+        requestBody:
+          contentType: application/json
+          payload:
+            productId: $inputs.productId
+            quantity: $inputs.quantity
+            unitPrice: $steps.check-product-exists.outputs.unitPrice
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          lineItemId: $response.body.lineItemId
+          cartTotal: $response.body.cartTotal
+
+    outputs:
+      lineItemId: $steps.add-item-to-cart.outputs.lineItemId
+      productName: $steps.check-product-exists.outputs.productName
+      quantity: $inputs.quantity
+      cartTotal: $steps.add-item-to-cart.outputs.cartTotal
+
+  - workflowId: checkout
+    summary: Complete checkout process
+    description: |
+      Processes the complete checkout flow including inventory reservation,
+      payment processing, order creation, and initiating fulfillment.
+      Implements proper rollback on failures.
+    inputs:
+      type: object
+      required:
+        - cartId
+        - customerId
+        - paymentMethodId
+        - shippingAddressId
+      properties:
+        cartId:
+          type: string
+        customerId:
+          type: string
+        paymentMethodId:
+          type: string
+        shippingAddressId:
+          type: string
+        billingAddressId:
+          type: string
+        couponCode:
+          type: string
+
+    parameters:
+      - name: Authorization
+        in: header
+        value: Bearer $inputs.accessToken
+
+    steps:
+      - stepId: get-cart
+        operationId: cart-api.getCart
+        parameters:
+          - name: cartId
+            in: path
+            value: $inputs.cartId
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body.items.length > 0
+        outputs:
+          items: $response.body.items
+          subtotal: $response.body.subtotal
+
+      - stepId: apply-coupon
+        description: Apply coupon code if provided
+        operationId: cart-api.applyCoupon
+        parameters:
+          - name: cartId
+            in: path
+            value: $inputs.cartId
+        requestBody:
+          contentType: application/json
+          payload:
+            couponCode: $inputs.couponCode
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          discount: $response.body.discount
+          discountedTotal: $response.body.total
+        onFailure:
+          - name: invalid-coupon
+            type: goto
+            stepId: calculate-shipping
+            criteria:
+              - condition: $statusCode == 400
+
+      - stepId: calculate-shipping
+        operationId: shipping-api.calculateRates
+        requestBody:
+          contentType: application/json
+          payload:
+            addressId: $inputs.shippingAddressId
+            items: $steps.get-cart.outputs.items
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          shippingRate: $response.body.rates[0]
+          estimatedDelivery: $response.body.rates[0].estimatedDelivery
+
+      - stepId: reserve-inventory
+        operationId: inventory-api.reserveItems
+        requestBody:
+          contentType: application/json
+          payload:
+            cartId: $inputs.cartId
+            items: $steps.get-cart.outputs.items
+            reservationDuration: 900
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          reservationId: $response.body.reservationId
+          expiresAt: $response.body.expiresAt
+        onFailure:
+          - name: inventory-unavailable
+            type: end
+            criteria:
+              - condition: $statusCode == 409
+
+      - stepId: calculate-tax
+        operationId: order-api.calculateTax
+        requestBody:
+          contentType: application/json
+          payload:
+            subtotal: $steps.get-cart.outputs.subtotal
+            shippingCost: $steps.calculate-shipping.outputs.shippingRate.price
+            shippingAddressId: $inputs.shippingAddressId
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          taxAmount: $response.body.taxAmount
+          totalAmount: $response.body.totalAmount
+
+      - stepId: process-payment
+        operationId: payment-api.createCharge
+        requestBody:
+          contentType: application/json
+          payload:
+            customerId: $inputs.customerId
+            paymentMethodId: $inputs.paymentMethodId
+            amount: $steps.calculate-tax.outputs.totalAmount
+            currency: USD
+            description: "Order payment"
+            metadata:
+              cartId: $inputs.cartId
+              reservationId: $steps.reserve-inventory.outputs.reservationId
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body.status == "succeeded"
+        outputs:
+          paymentId: $response.body.id
+          paymentStatus: $response.body.status
+        onFailure:
+          - name: payment-failed-retry
+            type: retry
+            retryAfter: 2
+            retryLimit: 2
+            criteria:
+              - condition: $statusCode == 503
+          - name: payment-declined
+            type: goto
+            stepId: release-inventory
+            criteria:
+              - condition: $response.body.status == "declined"
+
+      - stepId: create-order
+        operationId: order-api.createOrder
+        requestBody:
+          contentType: application/json
+          payload:
+            customerId: $inputs.customerId
+            cartId: $inputs.cartId
+            items: $steps.get-cart.outputs.items
+            shippingAddressId: $inputs.shippingAddressId
+            billingAddressId: $inputs.billingAddressId
+            paymentId: $steps.process-payment.outputs.paymentId
+            reservationId: $steps.reserve-inventory.outputs.reservationId
+            subtotal: $steps.get-cart.outputs.subtotal
+            discount: $steps.apply-coupon.outputs.discount
+            shipping: $steps.calculate-shipping.outputs.shippingRate.price
+            tax: $steps.calculate-tax.outputs.taxAmount
+            total: $steps.calculate-tax.outputs.totalAmount
+        successCriteria:
+          - condition: $statusCode == 201
+        outputs:
+          orderId: $response.body.orderId
+          orderNumber: $response.body.orderNumber
+          status: $response.body.status
+        onFailure:
+          - name: order-creation-failed
+            type: goto
+            stepId: refund-payment
+            criteria:
+              - condition: $statusCode >= 400
+
+      - stepId: confirm-inventory
+        operationId: inventory-api.confirmReservation
+        parameters:
+          - name: reservationId
+            in: path
+            value: $steps.reserve-inventory.outputs.reservationId
+        requestBody:
+          contentType: application/json
+          payload:
+            orderId: $steps.create-order.outputs.orderId
+        successCriteria:
+          - condition: $statusCode == 200
+
+      - stepId: initiate-fulfillment
+        operationId: shipping-api.createShipment
+        requestBody:
+          contentType: application/json
+          payload:
+            orderId: $steps.create-order.outputs.orderId
+            addressId: $inputs.shippingAddressId
+            shippingMethod: $steps.calculate-shipping.outputs.shippingRate.method
+            items: $steps.get-cart.outputs.items
+        successCriteria:
+          - condition: $statusCode == 201
+        outputs:
+          shipmentId: $response.body.shipmentId
+          trackingNumber: $response.body.trackingNumber
+
+      - stepId: clear-cart
+        operationId: cart-api.clearCart
+        parameters:
+          - name: cartId
+            in: path
+            value: $inputs.cartId
+        successCriteria:
+          - condition: $statusCode == 200
+
+      - stepId: release-inventory
+        description: Rollback step - release reserved inventory
+        operationId: inventory-api.releaseReservation
+        parameters:
+          - name: reservationId
+            in: path
+            value: $steps.reserve-inventory.outputs.reservationId
+        successCriteria:
+          - condition: $statusCode == 200
+        onSuccess:
+          - name: inventory-released
+            type: end
+
+      - stepId: refund-payment
+        description: Rollback step - refund the payment
+        operationId: payment-api.createRefund
+        requestBody:
+          contentType: application/json
+          payload:
+            paymentId: $steps.process-payment.outputs.paymentId
+            reason: "Order creation failed"
+        successCriteria:
+          - condition: $statusCode == 200
+        onSuccess:
+          - name: payment-refunded
+            type: goto
+            stepId: release-inventory
+
+    successActions:
+      - name: checkout-complete
+        type: end
+        criteria:
+          - condition: $steps.clear-cart.outputs != null
+
+    outputs:
+      orderId: $steps.create-order.outputs.orderId
+      orderNumber: $steps.create-order.outputs.orderNumber
+      status: $steps.create-order.outputs.status
+      paymentId: $steps.process-payment.outputs.paymentId
+      shipmentId: $steps.initiate-fulfillment.outputs.shipmentId
+      trackingNumber: $steps.initiate-fulfillment.outputs.trackingNumber
+      estimatedDelivery: $steps.calculate-shipping.outputs.estimatedDelivery
+      total: $steps.calculate-tax.outputs.totalAmount
+
+  - workflowId: track-order
+    summary: Get order status and tracking information
+    inputs:
+      type: object
+      required:
+        - orderId
+      properties:
+        orderId:
+          type: string
+    steps:
+      - stepId: get-order
+        operationId: order-api.getOrder
+        parameters:
+          - name: orderId
+            in: path
+            value: $inputs.orderId
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          orderStatus: $response.body.status
+          shipmentId: $response.body.shipmentId
+
+      - stepId: get-tracking
+        operationId: shipping-api.getShipment
+        parameters:
+          - name: shipmentId
+            in: path
+            value: $steps.get-order.outputs.shipmentId
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          trackingNumber: $response.body.trackingNumber
+          carrier: $response.body.carrier
+          status: $response.body.status
+          events: $response.body.trackingEvents
+          estimatedDelivery: $response.body.estimatedDelivery
+
+    outputs:
+      orderStatus: $steps.get-order.outputs.orderStatus
+      trackingNumber: $steps.get-tracking.outputs.trackingNumber
+      carrier: $steps.get-tracking.outputs.carrier
+      shippingStatus: $steps.get-tracking.outputs.status
+      trackingEvents: $steps.get-tracking.outputs.events
+      estimatedDelivery: $steps.get-tracking.outputs.estimatedDelivery

@@ -1,0 +1,58 @@
+name: Weather API Platform
+description: >-
+  A simple weather data API providing current conditions, forecasts, and
+  historical weather data for locations worldwide.
+url: https://api.weatherplatform.com/apis.json
+image: https://cdn.weatherplatform.com/logo.png
+created: '2024-06-15'
+modified: '2025-01-13'
+specificationVersion: '0.18'
+apis:
+  - aid: weather-api-v2
+    name: Weather API
+    description: >-
+      RESTful API providing real-time weather data, 7-day forecasts, and
+      historical weather information for any location globally.
+    image: https://cdn.weatherplatform.com/api-logo.png
+    baseURL: https://api.weatherplatform.com/v2
+    humanURL: https://weatherplatform.com/docs
+    tags:
+      - weather
+      - forecast
+      - climate
+      - meteorology
+      - geolocation
+    properties:
+      - type: OpenAPI
+        url: https://api.weatherplatform.com/v2/openapi.yaml
+      - type: Documentation
+        url: https://weatherplatform.com/docs/api
+      - type: GettingStarted
+        url: https://weatherplatform.com/docs/quickstart
+      - type: Authentication
+        url: https://weatherplatform.com/docs/authentication
+      - type: Pricing
+        url: https://weatherplatform.com/pricing
+      - type: RateLimits
+        url: https://weatherplatform.com/docs/rate-limits
+      - type: Support
+        url: https://weatherplatform.com/support
+      - type: StatusPage
+        url: https://status.weatherplatform.com
+    contact:
+      - FN: Weather Platform Support
+        email: support@weatherplatform.com
+        organizationName: Weather Platform Inc.
+        url: https://weatherplatform.com/contact
+        X-twitter: '@weatherplatform'
+maintainers:
+  - FN: Weather Platform API Team
+    email: api-team@weatherplatform.com
+    organizationName: Weather Platform Inc.
+    url: https://weatherplatform.com
+    X-github: weatherplatform
+tags:
+  - weather
+  - api
+  - data
+  - forecast

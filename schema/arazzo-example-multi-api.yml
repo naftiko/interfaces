@@ -1,0 +1,853 @@
+arazzo: "1.0.0"
+info:
+  title: Enterprise Loan Application Processing System
+  summary: End-to-end loan application workflow orchestrating multiple services
+  description: |
+    Comprehensive workflow system for processing loan applications including:
+    - Customer identity verification (KYC)
+    - Credit scoring and risk assessment
+    - Document verification
+    - Loan decisioning
+    - Contract generation and e-signature
+    - Disbursement processing
+    
+    This Arazzo description demonstrates advanced patterns including:
+    - Workflow dependencies
+    - Reusable components
+    - Complex branching logic
+    - Retry mechanisms with exponential backoff
+    - Multi-API orchestration
+    - Parallel step execution hints
+  version: "3.0.0"
+
+sourceDescriptions:
+  - name: customer-api
+    url: https://api.lender.example.com/customers/v2/openapi.yaml
+    type: openapi
+  - name: kyc-api
+    url: https://api.lender.example.com/kyc/v1/openapi.yaml
+    type: openapi
+  - name: credit-api
+    url: https://api.lender.example.com/credit/v3/openapi.yaml
+    type: openapi
+  - name: document-api
+    url: https://api.lender.example.com/documents/v2/openapi.yaml
+    type: openapi
+  - name: loan-api
+    url: https://api.lender.example.com/loans/v2/openapi.yaml
+    type: openapi
+  - name: contract-api
+    url: https://api.lender.example.com/contracts/v1/openapi.yaml
+    type: openapi
+  - name: signature-api
+    url: https://api.docusign.example.com/v2/openapi.yaml
+    type: openapi
+  - name: disbursement-api
+    url: https://api.lender.example.com/disbursements/v1/openapi.yaml
+    type: openapi
+  - name: notification-api
+    url: https://api.lender.example.com/notifications/v1/openapi.yaml
+    type: openapi
+  - name: audit-api
+    url: https://api.lender.example.com/audit/v1/openapi.yaml
+    type: openapi
+  - name: common-workflows
+    url: ./arazzo/common-workflows.yaml
+    type: arazzo
+
+workflows:
+  - workflowId: kyc-verification
+    summary: Know Your Customer verification workflow
+    description: |
+      Performs comprehensive identity verification including:
+      - Government ID verification
+      - Address verification
+      - Sanctions screening
+      - PEP (Politically Exposed Person) check
+    inputs:
+      type: object
+      required:
+        - customerId
+        - applicationType
+      properties:
+        customerId:
+          type: string
+          description: Customer identifier
+        applicationType:
+          type: string
+          enum: [individual, business]
+          description: Type of applicant
+        documentIds:
+          type: array
+          items:
+            type: string
+          description: Pre-uploaded document IDs
+    
+    parameters:
+      - reference: $components.parameters.correlationId
+      - reference: $components.parameters.authHeader
+
+    steps:
+      - stepId: get-customer
+        operationId: customer-api.getCustomer
+        parameters:
+          - name: customerId
+            in: path
+            value: $inputs.customerId
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          customerData: $response.body
+          firstName: $response.body.firstName
+          lastName: $response.body.lastName
+          dateOfBirth: $response.body.dateOfBirth
+          ssn: $response.body.taxId
+          address: $response.body.primaryAddress
+
+      - stepId: verify-identity
+        operationId: kyc-api.verifyIdentity
+        requestBody:
+          contentType: application/json
+          payload:
+            firstName: $steps.get-customer.outputs.firstName
+            lastName: $steps.get-customer.outputs.lastName
+            dateOfBirth: $steps.get-customer.outputs.dateOfBirth
+            ssn: $steps.get-customer.outputs.ssn
+            address: $steps.get-customer.outputs.address
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          identityVerified: $response.body.verified
+          identityScore: $response.body.score
+          identityDetails: $response.body.details
+        onFailure:
+          - reference: $components.failureActions.retryWithBackoff
+
+      - stepId: verify-address
+        operationId: kyc-api.verifyAddress
+        requestBody:
+          contentType: application/json
+          payload:
+            address: $steps.get-customer.outputs.address
+            name: $steps.get-customer.outputs.firstName + " " + $steps.get-customer.outputs.lastName
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          addressVerified: $response.body.verified
+          addressScore: $response.body.score
+
+      - stepId: sanctions-screening
+        operationId: kyc-api.screenSanctions
+        requestBody:
+          contentType: application/json
+          payload:
+            firstName: $steps.get-customer.outputs.firstName
+            lastName: $steps.get-customer.outputs.lastName
+            dateOfBirth: $steps.get-customer.outputs.dateOfBirth
+            country: $steps.get-customer.outputs.address.country
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body.sanctionsHit == false
+        outputs:
+          sanctionsCleared: $response.body.sanctionsHit == false
+          sanctionsDetails: $response.body.details
+        onFailure:
+          - name: sanctions-hit
+            type: end
+            criteria:
+              - condition: $response.body.sanctionsHit == true
+
+      - stepId: pep-check
+        operationId: kyc-api.checkPEP
+        requestBody:
+          contentType: application/json
+          payload:
+            firstName: $steps.get-customer.outputs.firstName
+            lastName: $steps.get-customer.outputs.lastName
+            country: $steps.get-customer.outputs.address.country
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          isPEP: $response.body.isPEP
+          pepDetails: $response.body.details
+
+      - stepId: compile-kyc-result
+        operationId: kyc-api.createVerificationRecord
+        requestBody:
+          contentType: application/json
+          payload:
+            customerId: $inputs.customerId
+            identityVerification:
+              verified: $steps.verify-identity.outputs.identityVerified
+              score: $steps.verify-identity.outputs.identityScore
+            addressVerification:
+              verified: $steps.verify-address.outputs.addressVerified
+              score: $steps.verify-address.outputs.addressScore
+            sanctionsScreening:
+              cleared: $steps.sanctions-screening.outputs.sanctionsCleared
+            pepCheck:
+              isPEP: $steps.pep-check.outputs.isPEP
+              details: $steps.pep-check.outputs.pepDetails
+        successCriteria:
+          - condition: $statusCode == 201
+        outputs:
+          kycRecordId: $response.body.id
+          kycStatus: $response.body.status
+          kycScore: $response.body.overallScore
+
+    outputs:
+      kycRecordId: $steps.compile-kyc-result.outputs.kycRecordId
+      kycStatus: $steps.compile-kyc-result.outputs.kycStatus
+      kycScore: $steps.compile-kyc-result.outputs.kycScore
+      identityVerified: $steps.verify-identity.outputs.identityVerified
+      addressVerified: $steps.verify-address.outputs.addressVerified
+      sanctionsCleared: $steps.sanctions-screening.outputs.sanctionsCleared
+      isPEP: $steps.pep-check.outputs.isPEP
+
+  - workflowId: credit-assessment
+    summary: Credit scoring and risk assessment
+    description: Performs comprehensive credit analysis including bureau pulls and risk scoring
+    dependsOn:
+      - kyc-verification
+    inputs:
+      type: object
+      required:
+        - customerId
+        - loanAmount
+        - loanPurpose
+      properties:
+        customerId:
+          type: string
+        loanAmount:
+          type: number
+        loanPurpose:
+          type: string
+        loanTerm:
+          type: integer
+          description: Loan term in months
+        kycRecordId:
+          type: string
+          description: KYC verification record ID
+
+    parameters:
+      - reference: $components.parameters.correlationId
+      - reference: $components.parameters.authHeader
+
+    steps:
+      - stepId: pull-credit-bureau
+        operationId: credit-api.pullCreditReport
+        requestBody:
+          contentType: application/json
+          payload:
+            customerId: $inputs.customerId
+            bureaus:
+              - experian
+              - equifax
+              - transunion
+            purpose: "loan_application"
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          creditReportId: $response.body.reportId
+          creditScore: $response.body.scores.fico
+          creditHistory: $response.body.history
+        onFailure:
+          - reference: $components.failureActions.retryWithBackoff
+
+      - stepId: analyze-debt-to-income
+        operationId: credit-api.calculateDTI
+        parameters:
+          - name: customerId
+            in: path
+            value: $inputs.customerId
+        requestBody:
+          contentType: application/json
+          payload:
+            creditReportId: $steps.pull-credit-bureau.outputs.creditReportId
+            proposedLoanAmount: $inputs.loanAmount
+            proposedLoanTerm: $inputs.loanTerm
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          dtiRatio: $response.body.dtiRatio
+          monthlyDebtPayments: $response.body.monthlyDebtPayments
+          monthlyIncome: $response.body.monthlyIncome
+
+      - stepId: calculate-risk-score
+        operationId: credit-api.calculateRiskScore
+        requestBody:
+          contentType: application/json
+          payload:
+            customerId: $inputs.customerId
+            creditScore: $steps.pull-credit-bureau.outputs.creditScore
+            dtiRatio: $steps.analyze-debt-to-income.outputs.dtiRatio
+            loanAmount: $inputs.loanAmount
+            loanPurpose: $inputs.loanPurpose
+            kycRecordId: $inputs.kycRecordId
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          riskScore: $response.body.riskScore
+          riskGrade: $response.body.riskGrade
+          riskFactors: $response.body.factors
+
+      - stepId: determine-pricing
+        operationId: loan-api.calculatePricing
+        requestBody:
+          contentType: application/json
+          payload:
+            loanAmount: $inputs.loanAmount
+            loanTerm: $inputs.loanTerm
+            riskGrade: $steps.calculate-risk-score.outputs.riskGrade
+            creditScore: $steps.pull-credit-bureau.outputs.creditScore
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          interestRate: $response.body.interestRate
+          apr: $response.body.apr
+          monthlyPayment: $response.body.monthlyPayment
+          totalInterest: $response.body.totalInterest
+          totalRepayment: $response.body.totalRepayment
+
+    outputs:
+      creditReportId: $steps.pull-credit-bureau.outputs.creditReportId
+      creditScore: $steps.pull-credit-bureau.outputs.creditScore
+      dtiRatio: $steps.analyze-debt-to-income.outputs.dtiRatio
+      riskScore: $steps.calculate-risk-score.outputs.riskScore
+      riskGrade: $steps.calculate-risk-score.outputs.riskGrade
+      riskFactors: $steps.calculate-risk-score.outputs.riskFactors
+      interestRate: $steps.determine-pricing.outputs.interestRate
+      apr: $steps.determine-pricing.outputs.apr
+      monthlyPayment: $steps.determine-pricing.outputs.monthlyPayment
+
+  - workflowId: loan-decisioning
+    summary: Automated loan decision workflow
+    description: Makes loan approval decision based on credit assessment and policy rules
+    dependsOn:
+      - kyc-verification
+      - credit-assessment
+    inputs:
+      type: object
+      required:
+        - applicationId
+        - customerId
+        - loanAmount
+        - creditAssessment
+        - kycResult
+      properties:
+        applicationId:
+          type: string
+        customerId:
+          type: string
+        loanAmount:
+          type: number
+        loanTerm:
+          type: integer
+        creditAssessment:
+          type: object
+          description: Output from credit-assessment workflow
+        kycResult:
+          type: object
+          description: Output from kyc-verification workflow
+
+    parameters:
+      - reference: $components.parameters.correlationId
+      - reference: $components.parameters.authHeader
+
+    steps:
+      - stepId: apply-policy-rules
+        operationId: loan-api.evaluatePolicyRules
+        requestBody:
+          contentType: application/json
+          payload:
+            applicationId: $inputs.applicationId
+            creditScore: $inputs.creditAssessment.creditScore
+            riskGrade: $inputs.creditAssessment.riskGrade
+            dtiRatio: $inputs.creditAssessment.dtiRatio
+            loanAmount: $inputs.loanAmount
+            kycStatus: $inputs.kycResult.kycStatus
+            isPEP: $inputs.kycResult.isPEP
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          rulesResult: $response.body.result
+          failedRules: $response.body.failedRules
+          requiresManualReview: $response.body.requiresManualReview
+
+      - stepId: auto-approve
+        description: Automatic approval for applications passing all rules
+        operationId: loan-api.updateApplicationStatus
+        parameters:
+          - name: applicationId
+            in: path
+            value: $inputs.applicationId
+        requestBody:
+          contentType: application/json
+          payload:
+            status: approved
+            decision: auto_approved
+            approvedAmount: $inputs.loanAmount
+            interestRate: $inputs.creditAssessment.interestRate
+            apr: $inputs.creditAssessment.apr
+            monthlyPayment: $inputs.creditAssessment.monthlyPayment
+        successCriteria:
+          - condition: $statusCode == 200
+          - context: $steps.apply-policy-rules.outputs.rulesResult
+            condition: $steps.apply-policy-rules.outputs.rulesResult == "pass"
+            type: simple
+        outputs:
+          decision: $response.body.decision
+          approvedAmount: $response.body.approvedAmount
+        onSuccess:
+          - name: proceed-to-contract
+            type: goto
+            stepId: notify-approval
+
+      - stepId: auto-decline
+        description: Automatic decline for applications failing critical rules
+        operationId: loan-api.updateApplicationStatus
+        parameters:
+          - name: applicationId
+            in: path
+            value: $inputs.applicationId
+        requestBody:
+          contentType: application/json
+          payload:
+            status: declined
+            decision: auto_declined
+            declineReasons: $steps.apply-policy-rules.outputs.failedRules
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          decision: $response.body.decision
+          declineReasons: $response.body.declineReasons
+        onSuccess:
+          - name: end-declined
+            type: goto
+            stepId: notify-decline
+            criteria:
+              - condition: $steps.apply-policy-rules.outputs.rulesResult == "fail"
+              - condition: $steps.apply-policy-rules.outputs.requiresManualReview == false
+
+      - stepId: queue-manual-review
+        description: Queue for manual underwriter review
+        operationId: loan-api.createManualReviewTask
+        requestBody:
+          contentType: application/json
+          payload:
+            applicationId: $inputs.applicationId
+            customerId: $inputs.customerId
+            reviewType: underwriting
+            priority: $steps.apply-policy-rules.outputs.rulesResult == "conditional" ? "high" : "normal"
+            context:
+              creditAssessment: $inputs.creditAssessment
+              kycResult: $inputs.kycResult
+              failedRules: $steps.apply-policy-rules.outputs.failedRules
+        successCriteria:
+          - condition: $statusCode == 201
+        outputs:
+          reviewTaskId: $response.body.taskId
+          assignedTo: $response.body.assignedTo
+        onSuccess:
+          - name: manual-review-queued
+            type: goto
+            stepId: notify-pending-review
+            criteria:
+              - condition: $steps.apply-policy-rules.outputs.requiresManualReview == true
+
+      - stepId: notify-approval
+        operationId: notification-api.sendNotification
+        requestBody:
+          contentType: application/json
+          payload:
+            customerId: $inputs.customerId
+            template: loan_approved
+            channel:
+              - email
+              - sms
+            data:
+              applicationId: $inputs.applicationId
+              approvedAmount: $steps.auto-approve.outputs.approvedAmount
+              interestRate: $inputs.creditAssessment.interestRate
+              monthlyPayment: $inputs.creditAssessment.monthlyPayment
+        successCriteria:
+          - condition: $statusCode == 200
+        onSuccess:
+          - name: approval-complete
+            type: end
+
+      - stepId: notify-decline
+        operationId: notification-api.sendNotification
+        requestBody:
+          contentType: application/json
+          payload:
+            customerId: $inputs.customerId
+            template: loan_declined
+            channel:
+              - email
+            data:
+              applicationId: $inputs.applicationId
+              reasons: $steps.auto-decline.outputs.declineReasons
+        successCriteria:
+          - condition: $statusCode == 200
+        onSuccess:
+          - name: decline-complete
+            type: end
+
+      - stepId: notify-pending-review
+        operationId: notification-api.sendNotification
+        requestBody:
+          contentType: application/json
+          payload:
+            customerId: $inputs.customerId
+            template: loan_pending_review
+            channel:
+              - email
+            data:
+              applicationId: $inputs.applicationId
+              estimatedReviewTime: "2-3 business days"
+        successCriteria:
+          - condition: $statusCode == 200
+        onSuccess:
+          - name: pending-review-complete
+            type: end
+
+    outputs:
+      decision: $steps.auto-approve.outputs.decision
+      approvedAmount: $steps.auto-approve.outputs.approvedAmount
+      reviewTaskId: $steps.queue-manual-review.outputs.reviewTaskId
+
+  - workflowId: contract-and-disbursement
+    summary: Contract generation, e-signature, and fund disbursement
+    description: |
+      Final stage workflow for approved loans:
+      1. Generate loan contract
+      2. Send for electronic signature
+      3. Process disbursement upon signature completion
+    dependsOn:
+      - loan-decisioning
+    inputs:
+      type: object
+      required:
+        - applicationId
+        - customerId
+        - approvedAmount
+        - interestRate
+        - loanTerm
+        - disbursementAccountId
+      properties:
+        applicationId:
+          type: string
+        customerId:
+          type: string
+        approvedAmount:
+          type: number
+        interestRate:
+          type: number
+        apr:
+          type: number
+        loanTerm:
+          type: integer
+        monthlyPayment:
+          type: number
+        disbursementAccountId:
+          type: string
+          description: Bank account ID for fund disbursement
+
+    parameters:
+      - reference: $components.parameters.correlationId
+      - reference: $components.parameters.authHeader
+
+    failureActions:
+      - reference: $components.failureActions.auditFailure
+
+    steps:
+      - stepId: generate-contract
+        operationId: contract-api.generateContract
+        requestBody:
+          contentType: application/json
+          payload:
+            templateId: personal_loan_agreement_v2
+            applicationId: $inputs.applicationId
+            customerId: $inputs.customerId
+            loanDetails:
+              principalAmount: $inputs.approvedAmount
+              interestRate: $inputs.interestRate
+              apr: $inputs.apr
+              term: $inputs.loanTerm
+              monthlyPayment: $inputs.monthlyPayment
+              firstPaymentDate: "{{ now | date_add: 30, 'days' | date_format: 'yyyy-MM-dd' }}"
+        successCriteria:
+          - condition: $statusCode == 201
+        outputs:
+          contractId: $response.body.contractId
+          contractDocumentUrl: $response.body.documentUrl
+
+      - stepId: create-signature-request
+        operationId: signature-api.createEnvelope
+        requestBody:
+          contentType: application/json
+          payload:
+            documents:
+              - documentId: "1"
+                name: "Loan Agreement"
+                fileUrl: $steps.generate-contract.outputs.contractDocumentUrl
+            recipients:
+              signers:
+                - recipientId: "1"
+                  name: $inputs.customerName
+                  email: $inputs.customerEmail
+                  routingOrder: 1
+                  tabs:
+                    signHereTabs:
+                      - documentId: "1"
+                        pageNumber: "8"
+                        xPosition: "100"
+                        yPosition: "650"
+                    dateSignedTabs:
+                      - documentId: "1"
+                        pageNumber: "8"
+                        xPosition: "300"
+                        yPosition: "650"
+            emailSubject: "Please sign your loan agreement"
+            status: sent
+        successCriteria:
+          - condition: $statusCode == 201
+        outputs:
+          envelopeId: $response.body.envelopeId
+          signatureStatus: $response.body.status
+
+      - stepId: update-application-pending-signature
+        operationId: loan-api.updateApplicationStatus
+        parameters:
+          - name: applicationId
+            in: path
+            value: $inputs.applicationId
+        requestBody:
+          contentType: application/json
+          payload:
+            status: pending_signature
+            contractId: $steps.generate-contract.outputs.contractId
+            signatureEnvelopeId: $steps.create-signature-request.outputs.envelopeId
+        successCriteria:
+          - condition: $statusCode == 200
+
+      - stepId: wait-for-signature
+        description: Poll for signature completion (webhook would be preferred in production)
+        operationId: signature-api.getEnvelope
+        parameters:
+          - name: envelopeId
+            in: path
+            value: $steps.create-signature-request.outputs.envelopeId
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body.status == "completed"
+        outputs:
+          signedDocumentUrl: $response.body.signedDocumentUrl
+          completedDateTime: $response.body.completedDateTime
+        onFailure:
+          - name: signature-pending
+            type: retry
+            retryAfter: 3600
+            retryLimit: 168
+            criteria:
+              - condition: $response.body.status == "sent"
+          - name: signature-declined
+            type: goto
+            stepId: handle-signature-declined
+            criteria:
+              - condition: $response.body.status == "declined"
+
+      - stepId: store-signed-contract
+        operationId: document-api.storeDocument
+        requestBody:
+          contentType: application/json
+          payload:
+            applicationId: $inputs.applicationId
+            customerId: $inputs.customerId
+            documentType: signed_loan_agreement
+            sourceUrl: $steps.wait-for-signature.outputs.signedDocumentUrl
+            metadata:
+              contractId: $steps.generate-contract.outputs.contractId
+              signedAt: $steps.wait-for-signature.outputs.completedDateTime
+        successCriteria:
+          - condition: $statusCode == 201
+        outputs:
+          documentId: $response.body.documentId
+
+      - stepId: create-loan-account
+        operationId: loan-api.createLoanAccount
+        requestBody:
+          contentType: application/json
+          payload:
+            applicationId: $inputs.applicationId
+            customerId: $inputs.customerId
+            principalAmount: $inputs.approvedAmount
+            interestRate: $inputs.interestRate
+            term: $inputs.loanTerm
+            monthlyPayment: $inputs.monthlyPayment
+            contractId: $steps.generate-contract.outputs.contractId
+            signedContractDocumentId: $steps.store-signed-contract.outputs.documentId
+        successCriteria:
+          - condition: $statusCode == 201
+        outputs:
+          loanAccountId: $response.body.loanAccountId
+          loanNumber: $response.body.loanNumber
+
+      - stepId: initiate-disbursement
+        operationId: disbursement-api.createDisbursement
+        requestBody:
+          contentType: application/json
+          payload:
+            loanAccountId: $steps.create-loan-account.outputs.loanAccountId
+            amount: $inputs.approvedAmount
+            destinationAccountId: $inputs.disbursementAccountId
+            disbursementType: loan_funding
+            reference: $steps.create-loan-account.outputs.loanNumber
+        successCriteria:
+          - condition: $statusCode == 201
+        outputs:
+          disbursementId: $response.body.disbursementId
+          disbursementStatus: $response.body.status
+          expectedArrival: $response.body.expectedArrival
+        onFailure:
+          - reference: $components.failureActions.retryWithBackoff
+
+      - stepId: finalize-loan
+        operationId: loan-api.updateApplicationStatus
+        parameters:
+          - name: applicationId
+            in: path
+            value: $inputs.applicationId
+        requestBody:
+          contentType: application/json
+          payload:
+            status: funded
+            loanAccountId: $steps.create-loan-account.outputs.loanAccountId
+            disbursementId: $steps.initiate-disbursement.outputs.disbursementId
+            fundedAt: "{{ now | date_format: 'yyyy-MM-ddTHH:mm:ssZ' }}"
+        successCriteria:
+          - condition: $statusCode == 200
+
+      - stepId: send-funding-notification
+        operationId: notification-api.sendNotification
+        requestBody:
+          contentType: application/json
+          payload:
+            customerId: $inputs.customerId
+            template: loan_funded
+            channel:
+              - email
+              - sms
+            data:
+              loanNumber: $steps.create-loan-account.outputs.loanNumber
+              fundedAmount: $inputs.approvedAmount
+              expectedArrival: $steps.initiate-disbursement.outputs.expectedArrival
+              firstPaymentDate: "{{ now | date_add: 30, 'days' | date_format: 'MMMM d, yyyy' }}"
+              monthlyPayment: $inputs.monthlyPayment
+        successCriteria:
+          - condition: $statusCode == 200
+
+      - stepId: handle-signature-declined
+        description: Handle case where customer declines to sign
+        operationId: loan-api.updateApplicationStatus
+        parameters:
+          - name: applicationId
+            in: path
+            value: $inputs.applicationId
+        requestBody:
+          contentType: application/json
+          payload:
+            status: cancelled
+            cancellationReason: customer_declined_signature
+        successCriteria:
+          - condition: $statusCode == 200
+        onSuccess:
+          - name: signature-declined-end
+            type: end
+
+    successActions:
+      - name: disbursement-complete
+        type: end
+        criteria:
+          - condition: $steps.send-funding-notification.outputs != null
+
+    outputs:
+      loanAccountId: $steps.create-loan-account.outputs.loanAccountId
+      loanNumber: $steps.create-loan-account.outputs.loanNumber
+      contractId: $steps.generate-contract.outputs.contractId
+      disbursementId: $steps.initiate-disbursement.outputs.disbursementId
+      disbursementStatus: $steps.initiate-disbursement.outputs.disbursementStatus
+      expectedFundsArrival: $steps.initiate-disbursement.outputs.expectedArrival
+
+components:
+  inputs:
+    loanApplicationInput:
+      type: object
+      required:
+        - customerId
+        - loanAmount
+        - loanPurpose
+        - loanTerm
+      properties:
+        customerId:
+          type: string
+          description: Unique customer identifier
+        loanAmount:
+          type: number
+          minimum: 1000
+          maximum: 100000
+          description: Requested loan amount
+        loanPurpose:
+          type: string
+          enum:
+            - debt_consolidation
+            - home_improvement
+            - major_purchase
+            - medical
+            - auto
+            - other
+        loanTerm:
+          type: integer
+          enum: [12, 24, 36, 48, 60]
+          description: Loan term in months
+
+  parameters:
+    correlationId:
+      name: X-Correlation-ID
+      in: header
+      value: $inputs.correlationId
+
+    authHeader:
+      name: Authorization
+      in: header
+      value: Bearer $inputs.accessToken
+
+    applicationId:
+      name: applicationId
+      in: path
+      value: $inputs.applicationId
+
+  successActions:
+    auditSuccess:
+      name: audit-success
+      type: end
+
+    proceedToNextStep:
+      name: proceed
+      type: goto
+
+  failureActions:
+    retryWithBackoff:
+      name: retry-with-exponential-backoff
+      type: retry
+      retryAfter: 5
+      retryLimit: 3
+
+    auditFailure:
+      name: audit-and-end
+      type: end
+
+    notifyAndEnd:
+      name: notify-failure-and-end
+      type: end

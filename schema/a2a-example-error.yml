@@ -1,0 +1,7 @@
+jsonrpc: '2.0'
+id: req-005
+error:
+  code: -32001
+  message: Task not found
+  data:
+    taskId: task-nonexistent

@@ -1,0 +1,18 @@
+jsonrpc: '2.0'
+id: req-002
+method: message/send
+params:
+  message:
+    kind: message
+    messageId: msg-file-001
+    role: user
+    taskId: task-xyz789
+    contextId: ctx-456def
+    parts:
+      - kind: text
+        text: Here's a photo of my bread. How did it turn out?
+      - kind: file
+        file:
+          uri: https://storage.example.com/images/bread-photo.jpg
+          mimeType: image/jpeg
+          name: my-bread.jpg

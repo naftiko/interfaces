@@ -1,0 +1,714 @@
+version: "4.3.0"
+
+type: DeclarativeSource
+
+check:
+  type: CheckStream
+  stream_names:
+    - accounts
+
+concurrency_level:
+  type: ConcurrencyLevel
+  default_concurrency: "{{ config['concurrency'] or 5 }}"
+  max_concurrency: 10
+
+api_budget:
+  type: HTTPAPIBudget
+  policies:
+    - type: MovingWindowCallRatePolicy
+      rates:
+        - limit: 100
+          interval: PT1M
+      matchers:
+        - type: HttpRequestRegexMatcher
+          url_base: https://api.analytics-platform.com
+    - type: FixedWindowCallRatePolicy
+      period: P1D
+      call_limit: 10000
+      matchers:
+        - type: HttpRequestRegexMatcher
+          url_path_pattern: "/reports/.*"
+
+max_concurrent_async_job_count: 3
+
+definitions:
+  # Authentication - JWT
+  jwt_authenticator:
+    type: JwtAuthenticator
+    secret_key: "{{ config['private_key'] }}"
+    algorithm: RS256
+    token_duration: 3600
+    header_prefix: "Bearer"
+    jwt_headers:
+      kid: "{{ config['key_id'] }}"
+      typ: JWT
+    jwt_payload:
+      iss: "{{ config['service_account_email'] }}"
+      sub: "{{ config['service_account_email'] }}"
+      aud: "https://api.analytics-platform.com"
+
+  # Selective Authentication
+  selective_auth:
+    type: SelectiveAuthenticator
+    authenticator_selection_path:
+      - credentials
+      - auth_type
+    authenticators:
+      jwt:
+        $ref: "#/definitions/jwt_authenticator"
+      api_key:
+        type: ApiKeyAuthenticator
+        api_token: "{{ config['credentials']['api_key'] }}"
+        inject_into:
+          type: RequestOption
+          inject_into: header
+          field_name: X-API-Key
+      oauth:
+        type: OAuthAuthenticator
+        client_id: "{{ config['credentials']['client_id'] }}"
+        client_secret: "{{ config['credentials']['client_secret'] }}"
+        refresh_token: "{{ config['credentials']['refresh_token'] }}"
+        token_refresh_endpoint: "https://api.analytics-platform.com/oauth/token"
+
+  # Error Handler with Custom Backoff
+  error_handler:
+    type: DefaultErrorHandler
+    max_retries: 10
+    backoff_strategies:
+      - type: WaitTimeFromHeader
+        header: Retry-After
+        regex: "([0-9]+)"
+        max_waiting_time_in_seconds: 300
+      - type: ExponentialBackoffStrategy
+        factor: 5
+    response_filters:
+      - type: HttpResponseFilter
+        action: RATE_LIMITED
+        http_codes:
+          - 429
+      - type: HttpResponseFilter
+        action: RETRY
+        http_codes:
+          - 500
+          - 502
+          - 503
+          - 504
+      - type: HttpResponseFilter
+        action: IGNORE
+        predicate: "{{ response.get('data', []) | length == 0 }}"
+
+  # Offset Pagination
+  offset_paginator:
+    type: DefaultPaginator
+    page_size_option:
+      type: RequestOption
+      inject_into: request_parameter
+      field_name: page_size
+    page_token_option:
+      type: RequestOption
+      inject_into: request_parameter
+      field_name: offset
+    pagination_strategy:
+      type: OffsetIncrement
+      page_size: 250
+      inject_on_first_request: true
+
+  # Base Requester
+  base_requester:
+    type: HttpRequester
+    url_base: "https://api.analytics-platform.com/v3"
+    http_method: GET
+    authenticator:
+      $ref: "#/definitions/selective_auth"
+    error_handler:
+      $ref: "#/definitions/error_handler"
+    request_headers:
+      Accept: application/json
+      X-Request-Id: "{{ now_utc().strftime('%Y%m%d%H%M%S') }}-{{ config['account_id'] }}"
+
+  # Base Retriever
+  base_retriever:
+    type: SimpleRetriever
+    requester:
+      $ref: "#/definitions/base_requester"
+    record_selector:
+      type: RecordSelector
+      extractor:
+        type: DpathExtractor
+        field_path:
+          - data
+          - items
+      schema_normalization: Default
+    paginator:
+      $ref: "#/definitions/offset_paginator"
+
+  # Incremental Sync Base
+  incremental_sync_base:
+    type: DatetimeBasedCursor
+    cursor_field: modified_at
+    datetime_format: "%Y-%m-%dT%H:%M:%S.%fZ"
+    cursor_datetime_formats:
+      - "%Y-%m-%dT%H:%M:%S.%fZ"
+      - "%Y-%m-%dT%H:%M:%SZ"
+      - "%Y-%m-%d"
+    start_datetime:
+      type: MinMaxDatetime
+      datetime: "{{ config['start_date'] }}"
+      datetime_format: "%Y-%m-%dT%H:%M:%SZ"
+      min_datetime: "2020-01-01T00:00:00Z"
+    end_datetime:
+      type: MinMaxDatetime
+      datetime: "{{ now_utc().strftime('%Y-%m-%dT%H:%M:%SZ') }}"
+    start_time_option:
+      type: RequestOption
+      inject_into: request_parameter
+      field_name: modified_since
+    cursor_granularity: PT1S
+    step: P30D
+    lookback_window: P3D
+
+  # ==================== STREAMS ====================
+
+  # Accounts Stream (Parent)
+  accounts_stream:
+    type: DeclarativeStream
+    name: accounts
+    primary_key:
+      - id
+    retriever:
+      $ref: "#/definitions/base_retriever"
+      requester:
+        $ref: "#/definitions/base_requester"
+        path: /accounts
+    schema_loader:
+      type: InlineSchemaLoader
+      schema:
+        $schema: http://json-schema.org/draft-07/schema#
+        type: object
+        properties:
+          id:
+            type: string
+          name:
+            type: string
+          status:
+            type: string
+          created_at:
+            type: string
+            format: date-time
+          modified_at:
+            type: string
+            format: date-time
+          settings:
+            type: object
+
+  # Properties Stream (Substream of Accounts)
+  properties_stream:
+    type: DeclarativeStream
+    name: properties
+    primary_key:
+      - id
+    retriever:
+      type: SimpleRetriever
+      requester:
+        $ref: "#/definitions/base_requester"
+        path: /accounts/{{ stream_partition['account_id'] }}/properties
+      record_selector:
+        type: RecordSelector
+        extractor:
+          type: DpathExtractor
+          field_path:
+            - properties
+      paginator:
+        $ref: "#/definitions/offset_paginator"
+      partition_router:
+        type: SubstreamPartitionRouter
+        parent_stream_configs:
+          - type: ParentStreamConfig
+            parent_key: id
+            partition_field: account_id
+            stream:
+              $ref: "#/definitions/accounts_stream"
+    incremental_sync:
+      $ref: "#/definitions/incremental_sync_base"
+    transformations:
+      - type: AddFields
+        fields:
+          - type: AddedFieldDefinition
+            path:
+              - account_id
+            value: "{{ stream_partition['account_id'] }}"
+    schema_loader:
+      type: InlineSchemaLoader
+      schema:
+        $schema: http://json-schema.org/draft-07/schema#
+        type: object
+        properties:
+          id:
+            type: string
+          account_id:
+            type: string
+          name:
+            type: string
+          url:
+            type: string
+          timezone:
+            type: string
+          currency:
+            type: string
+          created_at:
+            type: string
+            format: date-time
+          modified_at:
+            type: string
+            format: date-time
+
+  # Events Stream with List Partition Router
+  events_stream:
+    type: DeclarativeStream
+    name: events
+    primary_key:
+      - event_id
+      - property_id
+    retriever:
+      type: SimpleRetriever
+      requester:
+        $ref: "#/definitions/base_requester"
+        path: /properties/{{ stream_partition['property_id'] }}/events
+        request_parameters:
+          event_type: "{{ stream_partition['event_type'] }}"
+      record_selector:
+        type: RecordSelector
+        extractor:
+          type: DpathExtractor
+          field_path:
+            - events
+        record_filter:
+          type: RecordFilter
+          condition: "{{ record['timestamp'] >= stream_interval['start_time'] }}"
+      paginator:
+        type: DefaultPaginator
+        pagination_strategy:
+          type: CursorPagination
+          cursor_value: "{{ response['next_page_token'] }}"
+          stop_condition: "{{ response['next_page_token'] is none }}"
+        page_token_option:
+          type: RequestOption
+          inject_into: request_parameter
+          field_name: page_token
+      partition_router:
+        - type: SubstreamPartitionRouter
+          parent_stream_configs:
+            - type: ParentStreamConfig
+              parent_key: id
+              partition_field: property_id
+              stream:
+                $ref: "#/definitions/properties_stream"
+        - type: ListPartitionRouter
+          cursor_field: event_type
+          values:
+            - page_view
+            - click
+            - conversion
+            - custom
+    incremental_sync:
+      type: DatetimeBasedCursor
+      cursor_field: timestamp
+      datetime_format: "%Y-%m-%dT%H:%M:%S.%fZ"
+      start_datetime:
+        type: MinMaxDatetime
+        datetime: "{{ config['start_date'] }}"
+        datetime_format: "%Y-%m-%dT%H:%M:%SZ"
+      start_time_option:
+        type: RequestOption
+        inject_into: request_parameter
+        field_name: start_time
+      end_time_option:
+        type: RequestOption
+        inject_into: request_parameter
+        field_name: end_time
+      cursor_granularity: PT1S
+      step: P1D
+      is_client_side_incremental: true
+    schema_loader:
+      type: InlineSchemaLoader
+      schema:
+        $schema: http://json-schema.org/draft-07/schema#
+        type: object
+        properties:
+          event_id:
+            type: string
+          property_id:
+            type: string
+          event_type:
+            type: string
+          timestamp:
+            type: string
+            format: date-time
+          user_id:
+            type: string
+          session_id:
+            type: string
+          page_url:
+            type: string
+          referrer:
+            type: string
+          device:
+            type: object
+          geo:
+            type: object
+          custom_dimensions:
+            type: object
+
+  # Async Reports Stream
+  reports_stream:
+    type: DeclarativeStream
+    name: reports
+    primary_key:
+      - report_id
+      - date
+    retriever:
+      type: AsyncRetriever
+      record_selector:
+        type: RecordSelector
+        extractor:
+          type: DpathExtractor
+          field_path:
+            - rows
+      status_mapping:
+        type: AsyncJobStatusMap
+        running:
+          - PENDING
+          - PROCESSING
+          - RUNNING
+        completed:
+          - COMPLETED
+          - READY
+        failed:
+          - FAILED
+          - ERROR
+        timeout:
+          - TIMEOUT
+          - CANCELLED
+      status_extractor:
+        type: DpathExtractor
+        field_path:
+          - job
+          - status
+      download_target_extractor:
+        type: DpathExtractor
+        field_path:
+          - job
+          - download_url
+      creation_requester:
+        type: HttpRequester
+        url_base: "https://api.analytics-platform.com/v3"
+        path: /reports/jobs
+        http_method: POST
+        authenticator:
+          $ref: "#/definitions/selective_auth"
+        request_body:
+          type: RequestBodyJsonObject
+          value:
+            property_id: "{{ config['property_id'] }}"
+            date_range:
+              start_date: "{{ stream_interval['start_time'][:10] }}"
+              end_date: "{{ stream_interval['end_time'][:10] }}"
+            dimensions: "{{ config['report_dimensions'] or ['date', 'country', 'device'] }}"
+            metrics: "{{ config['report_metrics'] or ['sessions', 'users', 'pageviews'] }}"
+      polling_requester:
+        type: HttpRequester
+        url_base: "https://api.analytics-platform.com/v3"
+        path: /reports/jobs/{{ creation_response['job_id'] }}
+        http_method: GET
+        authenticator:
+          $ref: "#/definitions/selective_auth"
+      polling_job_timeout: 30
+      download_requester:
+        type: HttpRequester
+        url_base: ""
+        url: "{{ download_target }}"
+        http_method: GET
+        authenticator:
+          type: NoAuth
+      decoder:
+        type: JsonDecoder
+      download_decoder:
+        type: CsvDecoder
+        encoding: utf-8
+        delimiter: ","
+      partition_router:
+        type: SubstreamPartitionRouter
+        parent_stream_configs:
+          - type: ParentStreamConfig
+            parent_key: id
+            partition_field: property_id
+            stream:
+              $ref: "#/definitions/properties_stream"
+    incremental_sync:
+      type: DatetimeBasedCursor
+      cursor_field: date
+      datetime_format: "%Y-%m-%d"
+      start_datetime:
+        type: MinMaxDatetime
+        datetime: "{{ config['start_date'] }}"
+        datetime_format: "%Y-%m-%dT%H:%M:%SZ"
+      cursor_granularity: P1D
+      step: P7D
+    transformations:
+      - type: AddFields
+        fields:
+          - type: AddedFieldDefinition
+            path:
+              - report_id
+            value: "{{ stream_partition['property_id'] }}_{{ record['date'] }}"
+          - type: AddedFieldDefinition
+            path:
+              - property_id
+            value: "{{ stream_partition['property_id'] }}"
+      - type: KeysToSnakeCase
+    schema_loader:
+      type: InlineSchemaLoader
+      schema:
+        $schema: http://json-schema.org/draft-07/schema#
+        type: object
+        properties:
+          report_id:
+            type: string
+          property_id:
+            type: string
+          date:
+            type: string
+            format: date
+          country:
+            type: string
+          device:
+            type: string
+          sessions:
+            type: integer
+          users:
+            type: integer
+          pageviews:
+            type: integer
+          bounce_rate:
+            type: number
+          avg_session_duration:
+            type: number
+
+streams:
+  - $ref: "#/definitions/accounts_stream"
+  - $ref: "#/definitions/properties_stream"
+  - $ref: "#/definitions/events_stream"
+  - $ref: "#/definitions/reports_stream"
+
+# Dynamic Streams - Create streams based on config
+dynamic_streams:
+  - type: DynamicDeclarativeStream
+    name: custom_reports
+    stream_template:
+      type: DeclarativeStream
+      name: "{{ components_values['name'] }}"
+      primary_key:
+        - id
+      retriever:
+        type: SimpleRetriever
+        requester:
+          $ref: "#/definitions/base_requester"
+          path: "/custom-reports/{{ components_values['report_id'] }}/data"
+        record_selector:
+          type: RecordSelector
+          extractor:
+            type: DpathExtractor
+            field_path:
+              - data
+        paginator:
+          $ref: "#/definitions/offset_paginator"
+      schema_loader:
+        type: DynamicSchemaLoader
+        retriever:
+          type: SimpleRetriever
+          requester:
+            $ref: "#/definitions/base_requester"
+            path: "/custom-reports/{{ components_values['report_id'] }}/schema"
+          record_selector:
+            type: RecordSelector
+            extractor:
+              type: DpathExtractor
+              field_path:
+                - fields
+        schema_type_identifier:
+          type: SchemaTypeIdentifier
+          key_pointer:
+            - name
+          type_pointer:
+            - data_type
+          types_mapping:
+            - current_type: STRING
+              target_type: string
+            - current_type: INTEGER
+              target_type: integer
+            - current_type: FLOAT
+              target_type: number
+            - current_type: BOOLEAN
+              target_type: boolean
+            - current_type: TIMESTAMP
+              target_type:
+                - "null"
+                - string
+    components_resolver:
+      type: ConfigComponentsResolver
+      stream_config:
+        type: StreamConfig
+        configs_pointer:
+          - custom_reports
+      components_mapping:
+        - type: ComponentMappingDefinition
+          field_path:
+            - name
+          value: "custom_report_{{ components_values['report_id'] }}"
+        - type: ComponentMappingDefinition
+          field_path:
+            - retriever
+            - requester
+            - path
+          value: "/custom-reports/{{ components_values['report_id'] }}/data"
+
+spec:
+  type: Spec
+  documentation_url: https://docs.airbyte.com/integrations/sources/analytics-platform
+  connection_specification:
+    $schema: http://json-schema.org/draft-07/schema#
+    title: Analytics Platform Source Spec
+    type: object
+    required:
+      - credentials
+      - start_date
+    properties:
+      credentials:
+        type: object
+        title: Authentication Method
+        order: 0
+        oneOf:
+          - type: object
+            title: Service Account (JWT)
+            required:
+              - auth_type
+              - service_account_email
+              - key_id
+              - private_key
+            properties:
+              auth_type:
+                type: string
+                const: jwt
+              service_account_email:
+                type: string
+                title: Service Account Email
+              key_id:
+                type: string
+                title: Key ID
+              private_key:
+                type: string
+                title: Private Key
+                airbyte_secret: true
+                multiline: true
+          - type: object
+            title: API Key
+            required:
+              - auth_type
+              - api_key
+            properties:
+              auth_type:
+                type: string
+                const: api_key
+              api_key:
+                type: string
+                title: API Key
+                airbyte_secret: true
+          - type: object
+            title: OAuth 2.0
+            required:
+              - auth_type
+              - client_id
+              - client_secret
+              - refresh_token
+            properties:
+              auth_type:
+                type: string
+                const: oauth
+              client_id:
+                type: string
+                title: Client ID
+              client_secret:
+                type: string
+                title: Client Secret
+                airbyte_secret: true
+              refresh_token:
+                type: string
+                title: Refresh Token
+                airbyte_secret: true
+      start_date:
+        type: string
+        title: Start Date
+        format: date-time
+        order: 1
+      property_id:
+        type: string
+        title: Property ID
+        description: The default property ID for reports
+        order: 2
+      report_dimensions:
+        type: array
+        title: Report Dimensions
+        items:
+          type: string
+          enum:
+            - date
+            - country
+            - city
+            - device
+            - browser
+            - os
+            - channel
+            - source
+            - medium
+            - campaign
+        order: 3
+      report_metrics:
+        type: array
+        title: Report Metrics
+        items:
+          type: string
+          enum:
+            - sessions
+            - users
+            - new_users
+            - pageviews
+            - events
+            - conversions
+            - revenue
+            - bounce_rate
+            - avg_session_duration
+        order: 4
+      custom_reports:
+        type: array
+        title: Custom Reports
+        description: Configure additional custom report streams
+        items:
+          type: object
+          required:
+            - report_id
+          properties:
+            report_id:
+              type: string
+              title: Report ID
+            name:
+              type: string
+              title: Stream Name
+        order: 5
+      concurrency:
+        type: integer
+        title: Concurrency Level
+        description: Number of concurrent requests
+        minimum: 1
+        maximum: 10
+        default: 5
+        order: 6

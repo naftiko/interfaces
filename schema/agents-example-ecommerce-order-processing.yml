@@ -1,0 +1,150 @@
+agentsJson: 1.0.0
+info:
+  title: E-Commerce Order Processing Agent
+  version: 1.0.0
+  description: >-
+    An agent that handles the complete order processing workflow including
+    inventory checks, payment processing, and shipping coordination. Enables
+    users to place orders, track shipments, and manage returns through natural
+    language interactions.
+sources:
+  - id: inventory_service
+    path: https://api.example.com/openapi/inventory.yaml
+  - id: payment_service
+    path: https://api.example.com/openapi/payments.yaml
+  - id: shipping_service
+    path: ./specs/shipping-api.json
+overrides:
+  - sourceId: payment_service
+    operationId: processPayment
+    fieldPath: parameters.0.required
+    value: true
+  - sourceId: shipping_service
+    operationId: createShipment
+    fieldPath: requestBody.content.application/json.schema.properties.priority.default
+    value: standard
+flows:
+  - id: place_order_flow
+    title: Place Order
+    description: >-
+      Complete order placement flow that checks inventory availability,
+      processes payment, and initiates shipping. Use this flow when a customer
+      wants to purchase items from their cart.
+    actions:
+      - id: check_inventory
+        sourceId: inventory_service
+        operationId: checkAvailability
+      - id: reserve_items
+        sourceId: inventory_service
+        operationId: reserveInventory
+      - id: process_payment
+        sourceId: payment_service
+        operationId: processPayment
+      - id: create_shipment
+        sourceId: shipping_service
+        operationId: createShipment
+    links:
+      - origin:
+          actionId: null
+          fieldPath: parameters.product_ids
+        target:
+          actionId: check_inventory
+          fieldPath: requestBody.productIds
+      - origin:
+          actionId: check_inventory
+          fieldPath: response.availableItems
+        target:
+          actionId: reserve_items
+          fieldPath: requestBody.items
+      - origin:
+          actionId: check_inventory
+          fieldPath: response.totalPrice
+        target:
+          actionId: process_payment
+          fieldPath: requestBody.amount
+      - origin:
+          actionId: null
+          fieldPath: parameters.payment_method_id
+        target:
+          actionId: process_payment
+          fieldPath: requestBody.paymentMethodId
+      - origin:
+          actionId: process_payment
+          fieldPath: response.transactionId
+        target:
+          actionId: create_shipment
+          fieldPath: requestBody.paymentReference
+      - origin:
+          actionId: null
+          fieldPath: parameters.shipping_address
+        target:
+          actionId: create_shipment
+          fieldPath: requestBody.destinationAddress
+      - origin:
+          actionId: create_shipment
+          fieldPath: response.trackingNumber
+        target:
+          actionId: null
+          fieldPath: responses.success.trackingNumber
+      - origin:
+          actionId: process_payment
+          fieldPath: response.transactionId
+        target:
+          actionId: null
+          fieldPath: responses.success.transactionId
+    fields:
+      parameters:
+        - name: product_ids
+          description: Array of product IDs to purchase
+          required: true
+          type: array
+        - name: payment_method_id
+          description: ID of the customer's saved payment method
+          required: true
+          type: string
+        - name: shipping_address
+          description: >-
+            Complete shipping address object with street, city, state, zip, and
+            country
+          required: true
+          type: object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                product_ids:
+                  type: array
+                  items:
+                    type: string
+                quantities:
+                  type: object
+                  additionalProperties:
+                    type: integer
+            example:
+              product_ids:
+                - prod_123
+                - prod_456
+              quantities:
+                prod_123: 2
+                prod_456: 1
+        required: false
+      responses:
+        success:
+          type: object
+          properties:
+            orderId:
+              type: string
+            trackingNumber:
+              type: string
+            transactionId:
+              type: string
+            estimatedDelivery:
+              type: string
+              format: date
+        example:
+          orderId: ord_789xyz
+          trackingNumber: 1Z999AA10123456784
+          transactionId: txn_abc123
+          estimatedDelivery: '2025-01-20'

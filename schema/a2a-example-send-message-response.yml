@@ -1,0 +1,44 @@
+jsonrpc: '2.0'
+id: req-001
+result:
+  kind: task
+  id: task-xyz789
+  contextId: ctx-456def
+  status:
+    state: completed
+    timestamp: '2025-01-13T14:30:00Z'
+    message:
+      kind: message
+      messageId: msg-resp-001
+      role: agent
+      parts:
+        - kind: text
+          text: Here's a classic sourdough bread recipe...
+  history:
+    - kind: message
+      messageId: msg-abc123
+      role: user
+      parts:
+        - kind: text
+          text: I need a recipe for bread using sourdough starter
+  artifacts:
+    - artifactId: artifact-001
+      name: Sourdough Recipe
+      description: Complete sourdough bread recipe
+      parts:
+        - kind: data
+          data:
+            title: Classic Sourdough Bread
+            prepTime: 30 minutes
+            cookTime: 45 minutes
+            ingredients:
+              - 500g bread flour
+              - 350g water
+              - 100g active sourdough starter
+              - 10g salt
+            instructions:
+              - Mix flour and water, rest 30 minutes
+              - Add starter and salt, fold to combine
+              - Bulk ferment 4-6 hours with stretch and folds
+              - Shape and proof overnight in refrigerator
+              - Bake at 450°F in Dutch oven

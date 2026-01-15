@@ -1,0 +1,185 @@
+agentsJson: 1.0.0
+info:
+  title: User Authentication and Profile Management Agent
+  version: 2.1.0
+  description: >-
+    Manages user authentication, registration, profile updates, and account
+    security. Supports social login integration, two-factor authentication
+    setup, and profile data synchronization across services.
+sources:
+  - id: auth_service
+    path: https://auth.example.com/openapi/v3.yaml
+  - id: user_service
+    path: https://users.example.com/openapi/v2.yaml
+  - id: notification_service
+    path: ./specs/notifications.json
+overrides:
+  - sourceId: auth_service
+    operationId: login
+    fieldPath: security.0.oauth2
+    value:
+      - read
+      - write
+flows:
+  - id: user_registration_flow
+    title: User Registration
+    description: >-
+      Registers a new user account, creates their profile, and sends a welcome
+      email. Use when a new user wants to sign up for the platform.
+    actions:
+      - id: create_auth_account
+        sourceId: auth_service
+        operationId: createAccount
+      - id: create_user_profile
+        sourceId: user_service
+        operationId: createProfile
+      - id: send_welcome_email
+        sourceId: notification_service
+        operationId: sendEmail
+    links:
+      - origin:
+          actionId: null
+          fieldPath: parameters.email
+        target:
+          actionId: create_auth_account
+          fieldPath: requestBody.email
+      - origin:
+          actionId: null
+          fieldPath: parameters.password
+        target:
+          actionId: create_auth_account
+          fieldPath: requestBody.password
+      - origin:
+          actionId: create_auth_account
+          fieldPath: response.userId
+        target:
+          actionId: create_user_profile
+          fieldPath: requestBody.userId
+      - origin:
+          actionId: null
+          fieldPath: parameters.full_name
+        target:
+          actionId: create_user_profile
+          fieldPath: requestBody.displayName
+      - origin:
+          actionId: null
+          fieldPath: parameters.email
+        target:
+          actionId: send_welcome_email
+          fieldPath: requestBody.recipientEmail
+      - origin:
+          actionId: null
+          fieldPath: parameters.full_name
+        target:
+          actionId: send_welcome_email
+          fieldPath: requestBody.recipientName
+      - origin:
+          actionId: create_auth_account
+          fieldPath: response.userId
+        target:
+          actionId: null
+          fieldPath: responses.success.userId
+      - origin:
+          actionId: create_user_profile
+          fieldPath: response.profileId
+        target:
+          actionId: null
+          fieldPath: responses.success.profileId
+    fields:
+      parameters:
+        - name: email
+          description: User's email address for account creation and communications
+          required: true
+          type: string
+        - name: password
+          description: >-
+            User's chosen password (minimum 8 characters, must include
+            uppercase, lowercase, and number)
+          required: true
+          type: string
+        - name: full_name
+          description: User's full display name
+          required: true
+          type: string
+        - name: phone_number
+          description: Optional phone number for two-factor authentication
+          required: false
+          type: string
+      responses:
+        success:
+          type: object
+          properties:
+            userId:
+              type: string
+            profileId:
+              type: string
+            verificationEmailSent:
+              type: boolean
+        example:
+          userId: usr_abc123
+          profileId: prf_xyz789
+          verificationEmailSent: true
+  - id: password_reset_flow
+    title: Password Reset
+    description: >-
+      Initiates a password reset process by generating a reset token and sending
+      it via email. Use when a user has forgotten their password.
+    actions:
+      - id: verify_email_exists
+        sourceId: user_service
+        operationId: findByEmail
+      - id: generate_reset_token
+        sourceId: auth_service
+        operationId: createPasswordResetToken
+      - id: send_reset_email
+        sourceId: notification_service
+        operationId: sendEmail
+    links:
+      - origin:
+          actionId: null
+          fieldPath: parameters.email
+        target:
+          actionId: verify_email_exists
+          fieldPath: parameters.email
+      - origin:
+          actionId: verify_email_exists
+          fieldPath: response.userId
+        target:
+          actionId: generate_reset_token
+          fieldPath: requestBody.userId
+      - origin:
+          actionId: null
+          fieldPath: parameters.email
+        target:
+          actionId: send_reset_email
+          fieldPath: requestBody.recipientEmail
+      - origin:
+          actionId: generate_reset_token
+          fieldPath: response.resetToken
+        target:
+          actionId: send_reset_email
+          fieldPath: requestBody.templateData.resetLink
+      - origin:
+          actionId: generate_reset_token
+          fieldPath: response.expiresAt
+        target:
+          actionId: null
+          fieldPath: responses.success.tokenExpiresAt
+    fields:
+      parameters:
+        - name: email
+          description: Email address associated with the account
+          required: true
+          type: string
+      responses:
+        success:
+          type: object
+          properties:
+            message:
+              type: string
+            tokenExpiresAt:
+              type: string
+              format: date-time
+        example:
+          message: Password reset email sent successfully
+          tokenExpiresAt: '2025-01-13T16:00:00Z'

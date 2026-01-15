@@ -1,0 +1,299 @@
+aid: ecommerce-platform-apis
+type: Index
+name: E-Commerce Platform APIs
+description: >-
+  Complete suite of APIs for building e-commerce applications including product
+  catalog, orders, payments, inventory, and customer management.
+url: https://api.ecommerce-platform.com/apis.json
+image: https://cdn.ecommerce-platform.com/brand/logo-dark.svg
+created: '2023-03-01'
+modified: '2025-01-13'
+specificationVersion: '0.18'
+apis:
+  - aid: catalog-api-v3
+    name: Product Catalog API
+    description: >-
+      Comprehensive API for managing products, categories, variants, pricing,
+      and inventory across multiple channels and regions.
+    image: https://cdn.ecommerce-platform.com/apis/catalog-icon.svg
+    baseURL: https://api.ecommerce-platform.com/catalog/v3
+    humanURL: https://developers.ecommerce-platform.com/catalog
+    tags:
+      - products
+      - catalog
+      - inventory
+      - pricing
+      - categories
+      - e-commerce
+    properties:
+      - name: OpenAPI 3.1 Specification
+        type: OpenAPI
+        mediaType: application/yaml
+        url: https://api.ecommerce-platform.com/catalog/v3/openapi.yaml
+      - name: JSON Schema Definitions
+        type: JSONSchema
+        url: https://api.ecommerce-platform.com/catalog/v3/schemas/
+      - name: Postman Collection
+        type: PostmanCollection
+        url: https://api.ecommerce-platform.com/catalog/v3/postman.json
+      - name: API Documentation
+        type: Documentation
+        url: https://developers.ecommerce-platform.com/catalog/docs
+      - name: Quick Start Guide
+        type: GettingStarted
+        url: https://developers.ecommerce-platform.com/catalog/quickstart
+      - name: Authentication Guide
+        type: Authentication
+        url: https://developers.ecommerce-platform.com/auth
+      - name: API Versioning Policy
+        type: Versioning
+        url: https://developers.ecommerce-platform.com/versioning
+      - name: SDK Libraries
+        type: SDKs
+        url: https://developers.ecommerce-platform.com/sdks
+      - name: Error Code Reference
+        type: ErrorCodes
+        url: https://developers.ecommerce-platform.com/catalog/errors
+      - name: Changelog
+        type: ChangeLog
+        url: https://developers.ecommerce-platform.com/catalog/changelog
+      - name: Rate Limits
+        type: RateLimits
+        url: https://developers.ecommerce-platform.com/catalog/rate-limits
+      - name: Webhook Events
+        type: Webhooks
+        url: https://developers.ecommerce-platform.com/catalog/webhooks
+    contact:
+      - FN: Catalog API Team
+        email: catalog-api@ecommerce-platform.com
+        organizationName: E-Commerce Platform
+        X-github: ecommerce-platform
+        X-twitter: '@ecomplatformdev'
+    meta:
+      - key: lifecycle-stage
+        value: production
+      - key: api-tier
+        value: core
+      - key: sla-tier
+        value: platinum
+  - aid: orders-api-v2
+    name: Orders API
+    description: >-
+      API for creating, managing, and fulfilling customer orders including
+      checkout, shipping, returns, and order history.
+    image: https://cdn.ecommerce-platform.com/apis/orders-icon.svg
+    baseURL: https://api.ecommerce-platform.com/orders/v2
+    humanURL: https://developers.ecommerce-platform.com/orders
+    tags:
+      - orders
+      - checkout
+      - fulfillment
+      - shipping
+      - returns
+      - e-commerce
+    properties:
+      - name: OpenAPI Specification
+        type: OpenAPI
+        mediaType: application/yaml
+        url: https://api.ecommerce-platform.com/orders/v2/openapi.yaml
+      - name: AsyncAPI Specification
+        type: AsyncAPI
+        mediaType: application/yaml
+        url: https://api.ecommerce-platform.com/orders/v2/asyncapi.yaml
+      - name: Documentation
+        type: Documentation
+        url: https://developers.ecommerce-platform.com/orders/docs
+      - name: Getting Started
+        type: GettingStarted
+        url: https://developers.ecommerce-platform.com/orders/quickstart
+      - name: Webhooks
+        type: Webhooks
+        url: https://developers.ecommerce-platform.com/orders/webhooks
+      - name: Error Codes
+        type: ErrorCodes
+        url: https://developers.ecommerce-platform.com/orders/errors
+      - name: Changelog
+        type: ChangeLog
+        url: https://developers.ecommerce-platform.com/orders/changelog
+    contact:
+      - FN: Orders API Team
+        email: orders-api@ecommerce-platform.com
+        organizationName: E-Commerce Platform
+    meta:
+      - key: lifecycle-stage
+        value: production
+      - key: api-tier
+        value: core
+  - aid: payments-api-v3
+    name: Payments API
+    description: >-
+      Secure payment processing API supporting multiple payment methods,
+      currencies, and PCI-DSS compliant transaction handling.
+    image: https://cdn.ecommerce-platform.com/apis/payments-icon.svg
+    baseURL: https://api.ecommerce-platform.com/payments/v3
+    humanURL: https://developers.ecommerce-platform.com/payments
+    tags:
+      - payments
+      - transactions
+      - refunds
+      - pci-dss
+      - billing
+      - e-commerce
+    properties:
+      - name: OpenAPI Specification
+        type: OpenAPI
+        url: https://api.ecommerce-platform.com/payments/v3/openapi.yaml
+      - name: Documentation
+        type: Documentation
+        url: https://developers.ecommerce-platform.com/payments/docs
+      - name: Security Overview
+        type: Security
+        url: https://developers.ecommerce-platform.com/payments/security
+      - name: Getting Started
+        type: GettingStarted
+        url: https://developers.ecommerce-platform.com/payments/quickstart
+      - name: Terms of Service
+        type: TermsOfService
+        url: https://ecommerce-platform.com/legal/payments-tos
+      - name: Error Codes
+        type: ErrorCodes
+        url: https://developers.ecommerce-platform.com/payments/errors
+      - name: Changelog
+        type: ChangeLog
+        url: https://developers.ecommerce-platform.com/payments/changelog
+    contact:
+      - FN: Payments API Team
+        email: payments-api@ecommerce-platform.com
+        organizationName: E-Commerce Platform
+    meta:
+      - key: lifecycle-stage
+        value: production
+      - key: compliance
+        value: pci-dss-level-1
+  - aid: customers-api-v2
+    name: Customers API
+    description: >-
+      API for managing customer profiles, addresses, preferences, loyalty
+      programs, and customer segmentation.
+    image: https://cdn.ecommerce-platform.com/apis/customers-icon.svg
+    baseURL: https://api.ecommerce-platform.com/customers/v2
+    humanURL: https://developers.ecommerce-platform.com/customers
+    tags:
+      - customers
+      - profiles
+      - loyalty
+      - segmentation
+      - crm
+      - e-commerce
+    properties:
+      - name: OpenAPI Specification
+        type: OpenAPI
+        url: https://api.ecommerce-platform.com/customers/v2/openapi.yaml
+      - name: GraphQL Schema
+        type: GraphQLSchema
+        url: https://api.ecommerce-platform.com/customers/v2/graphql/schema
+      - name: Documentation
+        type: Documentation
+        url: https://developers.ecommerce-platform.com/customers/docs
+      - name: Privacy Policy
+        type: PrivacyPolicy
+        url: https://ecommerce-platform.com/legal/privacy
+      - name: Getting Started
+        type: GettingStarted
+        url: https://developers.ecommerce-platform.com/customers/quickstart
+    contact:
+      - FN: Customers API Team
+        email: customers-api@ecommerce-platform.com
+        organizationName: E-Commerce Platform
+  - aid: analytics-api-v1-beta
+    name: Analytics API (Beta)
+    description: >-
+      Beta API for accessing sales analytics, customer insights, product
+      performance metrics, and custom reporting.
+    image: https://cdn.ecommerce-platform.com/apis/analytics-icon.svg
+    baseURL: https://api.ecommerce-platform.com/analytics/v1-beta
+    humanURL: https://developers.ecommerce-platform.com/analytics
+    tags:
+      - analytics
+      - reporting
+      - insights
+      - metrics
+      - beta
+      - e-commerce
+    properties:
+      - name: OpenAPI Specification
+        type: OpenAPI
+        url: https://api.ecommerce-platform.com/analytics/v1-beta/openapi.yaml
+      - name: Documentation
+        type: Documentation
+        url: https://developers.ecommerce-platform.com/analytics/docs
+      - name: Roadmap
+        type: RoadMap
+        url: https://developers.ecommerce-platform.com/analytics/roadmap
+      - name: Beta Program
+        type: Signup
+        url: https://developers.ecommerce-platform.com/analytics/beta-signup
+    contact:
+      - FN: Analytics API Team
+        email: analytics-api@ecommerce-platform.com
+        organizationName: E-Commerce Platform
+    meta:
+      - key: lifecycle-stage
+        value: beta
+      - key: stability
+        value: experimental
+common:
+  - type: Authentication
+    url: https://developers.ecommerce-platform.com/auth
+  - type: Signup
+    url: https://developers.ecommerce-platform.com/signup
+  - type: Login
+    url: https://developers.ecommerce-platform.com/login
+  - type: TermsOfService
+    url: https://ecommerce-platform.com/legal/api-tos
+  - type: PrivacyPolicy
+    url: https://ecommerce-platform.com/legal/privacy
+  - type: ServiceLevelAgreement
+    url: https://ecommerce-platform.com/legal/sla
+  - type: Security
+    url: https://developers.ecommerce-platform.com/security
+  - type: SDKs
+    url: https://developers.ecommerce-platform.com/sdks
+  - type: StatusPage
+    url: https://status.ecommerce-platform.com
+  - type: Pricing
+    url: https://ecommerce-platform.com/pricing/api
+  - type: Blog
+    url: https://developers.ecommerce-platform.com/blog
+  - type: BlogFeed
+    url: https://developers.ecommerce-platform.com/blog/rss
+  - type: Forums
+    url: https://community.ecommerce-platform.com
+  - type: Support
+    url: https://support.ecommerce-platform.com
+  - type: Contact
+    url: https://developers.ecommerce-platform.com/contact
+  - type: GitHubOrg
+    url: https://github.com/ecommerce-platform
+  - type: Twitter
+    url: https://twitter.com/ecomplatformdev
+  - type: AlertsTwitterHandle
+    url: https://twitter.com/ecomplatformstatus
+maintainers:
+  - FN: E-Commerce Platform Developer Relations
+    email: devrel@ecommerce-platform.com
+    organizationName: E-Commerce Platform Inc.
+    url: https://developers.ecommerce-platform.com
+    X-github: ecommerce-platform
+    X-twitter: '@ecomplatformdev'
+  - FN: API Platform Team
+    email: api-platform@ecommerce-platform.com
+    organizationName: E-Commerce Platform Inc.
+tags:
+  - e-commerce
+  - retail
+  - platform
+  - commerce
+  - api
+  - rest
+  - graphql

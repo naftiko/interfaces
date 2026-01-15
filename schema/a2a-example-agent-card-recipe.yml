@@ -1,0 +1,47 @@
+name: Recipe Agent
+description: Agent that helps users with recipes and cooking.
+version: 1.0.0
+protocolVersion: 0.3.0
+url: https://api.example.com/a2a/v1
+preferredTransport: JSONRPC
+provider:
+  organization: Culinary AI Inc.
+  url: https://culinaryai.example.com
+capabilities:
+  streaming: true
+  pushNotifications: false
+  stateTransitionHistory: true
+defaultInputModes:
+  - text/plain
+  - application/json
+defaultOutputModes:
+  - text/plain
+  - application/json
+skills:
+  - id: recipe-search
+    name: Recipe Search
+    description: Search for recipes based on ingredients or cuisine type
+    tags:
+      - cooking
+      - recipes
+      - search
+    examples:
+      - Find me a recipe for chocolate cake
+      - What can I make with chicken and rice?
+  - id: meal-planning
+    name: Meal Planning
+    description: Create weekly meal plans based on dietary preferences
+    tags:
+      - cooking
+      - planning
+      - nutrition
+    examples:
+      - Plan my meals for the week
+      - I need a vegetarian meal plan
+securitySchemes:
+  bearer:
+    type: http
+    scheme: Bearer
+    bearerFormat: JWT
+security:
+  - bearer: []

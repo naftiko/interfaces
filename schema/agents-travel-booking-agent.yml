@@ -1,0 +1,394 @@
+agentsJson: 1.0.0
+info:
+  title: Travel Booking Agent
+  version: 3.0.0
+  description: >-
+    A comprehensive travel booking agent that coordinates flight searches, hotel
+    reservations, car rentals, and travel insurance. Enables end-to-end trip
+    planning with price comparison, loyalty program integration, and itinerary
+    management.
+sources:
+  - id: flight_service
+    path: https://flights.travelapi.com/openapi.yaml
+  - id: hotel_service
+    path: https://hotels.travelapi.com/openapi.yaml
+  - id: car_rental_service
+    path: https://cars.travelapi.com/openapi.yaml
+  - id: insurance_service
+    path: ./specs/travel-insurance.json
+  - id: itinerary_service
+    path: ./specs/itinerary-manager.json
+overrides:
+  - sourceId: flight_service
+    operationId: searchFlights
+    fieldPath: parameters.2.schema.default
+    value: economy
+  - sourceId: hotel_service
+    operationId: searchHotels
+    fieldPath: parameters.1.schema.enum
+    value:
+      - '1'
+      - '2'
+      - '3'
+      - '4'
+      - '5'
+flows:
+  - id: book_complete_trip_flow
+    title: Book Complete Trip
+    description: >-
+      Books a complete trip including round-trip flights, hotel accommodation,
+      and optional car rental. Creates a unified itinerary and offers travel
+      insurance. Use when a customer wants to plan and book an entire trip at
+      once.
+    actions:
+      - id: search_outbound_flights
+        sourceId: flight_service
+        operationId: searchFlights
+      - id: search_return_flights
+        sourceId: flight_service
+        operationId: searchFlights
+      - id: book_flights
+        sourceId: flight_service
+        operationId: bookFlight
+      - id: search_hotels
+        sourceId: hotel_service
+        operationId: searchHotels
+      - id: book_hotel
+        sourceId: hotel_service
+        operationId: createReservation
+      - id: search_cars
+        sourceId: car_rental_service
+        operationId: searchAvailability
+      - id: book_car
+        sourceId: car_rental_service
+        operationId: createBooking
+      - id: get_insurance_quote
+        sourceId: insurance_service
+        operationId: getQuote
+      - id: create_itinerary
+        sourceId: itinerary_service
+        operationId: createItinerary
+    links:
+      - origin:
+          actionId: null
+          fieldPath: parameters.origin_airport
+        target:
+          actionId: search_outbound_flights
+          fieldPath: parameters.origin
+      - origin:
+          actionId: null
+          fieldPath: parameters.destination_airport
+        target:
+          actionId: search_outbound_flights
+          fieldPath: parameters.destination
+      - origin:
+          actionId: null
+          fieldPath: parameters.departure_date
+        target:
+          actionId: search_outbound_flights
+          fieldPath: parameters.date
+      - origin:
+          actionId: null
+          fieldPath: parameters.destination_airport
+        target:
+          actionId: search_return_flights
+          fieldPath: parameters.origin
+      - origin:
+          actionId: null
+          fieldPath: parameters.origin_airport
+        target:
+          actionId: search_return_flights
+          fieldPath: parameters.destination
+      - origin:
+          actionId: null
+          fieldPath: parameters.return_date
+        target:
+          actionId: search_return_flights
+          fieldPath: parameters.date
+      - origin:
+          actionId: search_outbound_flights
+          fieldPath: response.flights.0.flightId
+        target:
+          actionId: book_flights
+          fieldPath: requestBody.outboundFlightId
+      - origin:
+          actionId: search_return_flights
+          fieldPath: response.flights.0.flightId
+        target:
+          actionId: book_flights
+          fieldPath: requestBody.returnFlightId
+      - origin:
+          actionId: null
+          fieldPath: parameters.destination_city
+        target:
+          actionId: search_hotels
+          fieldPath: parameters.city
+      - origin:
+          actionId: null
+          fieldPath: parameters.departure_date
+        target:
+          actionId: search_hotels
+          fieldPath: parameters.checkIn
+      - origin:
+          actionId: null
+          fieldPath: parameters.return_date
+        target:
+          actionId: search_hotels
+          fieldPath: parameters.checkOut
+      - origin:
+          actionId: search_hotels
+          fieldPath: response.hotels.0.hotelId
+        target:
+          actionId: book_hotel
+          fieldPath: requestBody.hotelId
+      - origin:
+          actionId: book_flights
+          fieldPath: response.confirmationNumber
+        target:
+          actionId: create_itinerary
+          fieldPath: requestBody.flightConfirmation
+      - origin:
+          actionId: book_hotel
+          fieldPath: response.confirmationNumber
+        target:
+          actionId: create_itinerary
+          fieldPath: requestBody.hotelConfirmation
+      - origin:
+          actionId: book_car
+          fieldPath: response.confirmationNumber
+        target:
+          actionId: create_itinerary
+          fieldPath: requestBody.carConfirmation
+      - origin:
+          actionId: create_itinerary
+          fieldPath: response.itineraryId
+        target:
+          actionId: null
+          fieldPath: responses.success.itineraryId
+      - origin:
+          actionId: book_flights
+          fieldPath: response.totalPrice
+        target:
+          actionId: null
+          fieldPath: responses.success.flightCost
+      - origin:
+          actionId: book_hotel
+          fieldPath: response.totalPrice
+        target:
+          actionId: null
+          fieldPath: responses.success.hotelCost
+      - origin:
+          actionId: get_insurance_quote
+          fieldPath: response.premium
+        target:
+          actionId: null
+          fieldPath: responses.success.insuranceQuote
+    fields:
+      parameters:
+        - name: origin_airport
+          description: Three-letter IATA code for departure airport (e.g., JFK, LAX, ORD)
+          required: true
+          type: string
+        - name: destination_airport
+          description: Three-letter IATA code for destination airport
+          required: true
+          type: string
+        - name: destination_city
+          description: City name for hotel search
+          required: true
+          type: string
+        - name: departure_date
+          description: Trip start date in YYYY-MM-DD format
+          required: true
+          type: string
+        - name: return_date
+          description: Trip end date in YYYY-MM-DD format
+          required: true
+          type: string
+        - name: num_travelers
+          description: Number of travelers
+          required: true
+          type: integer
+        - name: cabin_class
+          description: >-
+            Preferred flight cabin class: economy, premium_economy, business,
+            first
+          required: false
+          type: string
+        - name: hotel_star_rating
+          description: Minimum hotel star rating (1-5)
+          required: false
+          type: integer
+        - name: include_car_rental
+          description: Whether to include car rental in the booking
+          required: false
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                travelers:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      firstName:
+                        type: string
+                      lastName:
+                        type: string
+                      dateOfBirth:
+                        type: string
+                        format: date
+                      passportNumber:
+                        type: string
+                paymentMethod:
+                  type: object
+                  properties:
+                    cardToken:
+                      type: string
+                    billingAddressId:
+                      type: string
+                loyaltyPrograms:
+                  type: object
+                  properties:
+                    airline:
+                      type: string
+                    hotel:
+                      type: string
+            example:
+              travelers:
+                - firstName: John
+                  lastName: Doe
+                  dateOfBirth: '1985-06-15'
+                  passportNumber: AB1234567
+              paymentMethod:
+                cardToken: tok_visa_4242
+                billingAddressId: addr_123
+              loyaltyPrograms:
+                airline: UA123456789
+                hotel: MR987654321
+        required: true
+      responses:
+        success:
+          type: object
+          properties:
+            itineraryId:
+              type: string
+            flightConfirmation:
+              type: string
+            hotelConfirmation:
+              type: string
+            carConfirmation:
+              type: string
+            flightCost:
+              type: number
+            hotelCost:
+              type: number
+            carCost:
+              type: number
+            insuranceQuote:
+              type: number
+            totalCost:
+              type: number
+            itineraryUrl:
+              type: string
+        example:
+          itineraryId: itin_abc123xyz
+          flightConfirmation: UA-789456
+          hotelConfirmation: HLT-321654
+          carConfirmation: HZ-987321
+          flightCost: 856
+          hotelCost: 540
+          carCost: 210
+          insuranceQuote: 45
+          totalCost: 1651
+          itineraryUrl: https://travel.example.com/itinerary/itin_abc123xyz
+  - id: search_flights_only_flow
+    title: Search Flights
+    description: >-
+      Search for available flights between two airports on a specific date. Use
+      when a customer only wants to see flight options without booking.
+    actions:
+      - id: search_flights
+        sourceId: flight_service
+        operationId: searchFlights
+    links:
+      - origin:
+          actionId: null
+          fieldPath: parameters.origin
+        target:
+          actionId: search_flights
+          fieldPath: parameters.origin
+      - origin:
+          actionId: null
+          fieldPath: parameters.destination
+        target:
+          actionId: search_flights
+          fieldPath: parameters.destination
+      - origin:
+          actionId: null
+          fieldPath: parameters.date
+        target:
+          actionId: search_flights
+          fieldPath: parameters.date
+      - origin:
+          actionId: search_flights
+          fieldPath: response.flights
+        target:
+          actionId: null
+          fieldPath: responses.success.availableFlights
+    fields:
+      parameters:
+        - name: origin
+          description: Departure airport IATA code
+          required: true
+          type: string
+        - name: destination
+          description: Arrival airport IATA code
+          required: true
+          type: string
+        - name: date
+          description: Flight date in YYYY-MM-DD format
+          required: true
+          type: string
+        - name: cabin_class
+          description: Cabin class preference
+          required: false
+          type: string
+      responses:
+        success:
+          type: object
+          properties:
+            availableFlights:
+              type: array
+              items:
+                type: object
+                properties:
+                  flightId:
+                    type: string
+                  airline:
+                    type: string
+                  flightNumber:
+                    type: string
+                  departureTime:
+                    type: string
+                  arrivalTime:
+                    type: string
+                  duration:
+                    type: string
+                  price:
+                    type: number
+                  seatsAvailable:
+                    type: integer
+        example:
+          availableFlights:
+            - flightId: fl_001
+              airline: United Airlines
+              flightNumber: UA 123
+              departureTime: '2025-02-15T08:00:00'
+              arrivalTime: '2025-02-15T11:30:00'
+              duration: 3h 30m
+              price: 428
+              seatsAvailable: 45

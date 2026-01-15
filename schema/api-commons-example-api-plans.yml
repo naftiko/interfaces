@@ -1,0 +1,235 @@
+- id: plan-free-tier
+  name: Free Tier
+  type: freemium
+  description: >-
+    A free tier for developers to explore and test the API with limited access
+    to core features.
+  entries:
+    - label: API Requests
+      description: Total number of API requests allowed per month
+      name: api_requests
+      type: quota
+      metric: requests
+      limit: 1000
+      timeFrame: month
+      geo: global
+      domains:
+        - api.example.com
+      unit: 1
+      price: '0.00'
+      userMultiplied: false
+    - label: Rate Limit
+      description: Maximum requests per minute
+      name: rate_limit
+      type: rate
+      metric: requests_per_minute
+      limit: 10
+      timeFrame: minute
+      geo: global
+      domains:
+        - api.example.com
+      unit: 1
+      price: '0.00'
+      userMultiplied: false
+    - label: Data Export
+      description: Monthly data export allowance in MB
+      name: data_export
+      type: quota
+      metric: megabytes
+      limit: 100
+      timeFrame: month
+      geo: global
+      domains:
+        - api.example.com
+      unit: 1
+      price: '0.00'
+      userMultiplied: false
+  elements:
+    - name: Core API Access
+    - name: Public Data Endpoints
+    - name: Community Support
+    - name: API Documentation
+  changeLog:
+    - date: '2025-01-01'
+      name: Free tier launched
+      image: https://cdn.example.com/changelog/launch-icon.png
+      link: https://blog.example.com/free-tier-launch
+      tags:
+        - launch
+        - free-tier
+        - announcement
+- id: plan-professional
+  name: Professional
+  type: paid
+  description: >-
+    Professional tier for growing businesses with higher limits and priority
+    support.
+  entries:
+    - label: API Requests
+      description: Total number of API requests allowed per month
+      name: api_requests
+      type: quota
+      metric: requests
+      limit: 100000
+      timeFrame: month
+      geo: global
+      domains:
+        - api.example.com
+        - api-eu.example.com
+      unit: 1
+      price: '99.00'
+      userMultiplied: false
+    - label: Rate Limit
+      description: Maximum requests per minute
+      name: rate_limit
+      type: rate
+      metric: requests_per_minute
+      limit: 100
+      timeFrame: minute
+      geo: global
+      domains:
+        - api.example.com
+        - api-eu.example.com
+      unit: 1
+      price: '0.00'
+      userMultiplied: false
+    - label: Data Export
+      description: Monthly data export allowance in GB
+      name: data_export
+      type: quota
+      metric: gigabytes
+      limit: 10
+      timeFrame: month
+      geo: global
+      domains:
+        - api.example.com
+      unit: 1
+      price: '0.00'
+      userMultiplied: false
+    - label: Webhooks
+      description: Number of webhook endpoints allowed
+      name: webhooks
+      type: feature
+      metric: count
+      limit: 10
+      timeFrame: unlimited
+      geo: global
+      domains:
+        - webhooks.example.com
+      unit: 1
+      price: '0.00'
+      userMultiplied: true
+  elements:
+    - name: Core API Access
+    - name: All Data Endpoints
+    - name: Webhooks
+    - name: Priority Email Support
+    - name: API Documentation
+    - name: SDKs
+    - name: Sandbox Environment
+  changeLog:
+    - date: '2025-01-01'
+      name: Professional tier launched
+      image: https://cdn.example.com/changelog/pro-icon.png
+      link: https://blog.example.com/professional-tier-launch
+      tags:
+        - launch
+        - professional
+        - announcement
+    - date: '2025-01-10'
+      name: Increased rate limits from 60 to 100 rpm
+      image: https://cdn.example.com/changelog/upgrade-icon.png
+      link: https://blog.example.com/rate-limit-increase
+      tags:
+        - improvement
+        - rate-limits
+  roadMap:
+    - date: 2025-Q2
+      name: GraphQL API Support
+      image: https://cdn.example.com/roadmap/graphql.png
+      link: https://roadmap.example.com/graphql-support
+      tags:
+        - graphql
+        - api
+        - feature
+    - date: 2025-Q3
+      name: Real-time Streaming Endpoints
+      image: https://cdn.example.com/roadmap/streaming.png
+      link: https://roadmap.example.com/streaming
+      tags:
+        - streaming
+        - websockets
+        - real-time
+- id: plan-enterprise
+  name: Enterprise
+  type: enterprise
+  description: >-
+    Enterprise tier with unlimited access, dedicated support, SLA guarantees,
+    and custom integrations.
+  entries:
+    - label: API Requests
+      description: Unlimited API requests
+      name: api_requests
+      type: quota
+      metric: requests
+      limit: -1
+      timeFrame: month
+      geo: global
+      domains:
+        - api.example.com
+        - api-eu.example.com
+        - api-apac.example.com
+      unit: 1
+      price: custom
+      userMultiplied: false
+    - label: Rate Limit
+      description: Maximum requests per minute (configurable)
+      name: rate_limit
+      type: rate
+      metric: requests_per_minute
+      limit: 1000
+      timeFrame: minute
+      geo: global
+      domains:
+        - api.example.com
+        - api-eu.example.com
+        - api-apac.example.com
+      unit: 1
+      price: '0.00'
+      userMultiplied: false
+    - label: Data Export
+      description: Unlimited data export
+      name: data_export
+      type: quota
+      metric: gigabytes
+      limit: -1
+      timeFrame: month
+      geo: global
+      domains:
+        - api.example.com
+      unit: 1
+      price: '0.00'
+      userMultiplied: false
+    - label: Dedicated Infrastructure
+      description: Dedicated API infrastructure allocation
+      name: dedicated_infra
+      type: feature
+      metric: boolean
+      limit: 1
+      timeFrame: unlimited
+      geo: configurable
+      domains:
+        - '*.example.com'
+      unit: 1
+      price: included
+      userMultiplied: false
+  elements:
+    - name: Unlimited API Access
+    - name: All Endpoints
+    - name: Unlimited Webhooks
+    - name: 24/7 Dedicated Support
+    - name: 99.99% SLA
+    - name: Custom Integrations
+    - name: On-Premise Deployment Option
+    - name: Security Audit Reports
+    - name: Dedicated Account Manager

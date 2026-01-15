@@ -1,0 +1,106 @@
+version: "4.3.0"
+
+type: DeclarativeSource
+
+check:
+  type: CheckStream
+  stream_names:
+    - current_weather
+
+definitions:
+  selector:
+    type: RecordSelector
+    extractor:
+      type: DpathExtractor
+      field_path: []
+
+  requester:
+    type: HttpRequester
+    url_base: "https://api.weatherapi.com/v1"
+    http_method: GET
+    authenticator:
+      type: ApiKeyAuthenticator
+      api_token: "{{ config['api_key'] }}"
+      inject_into:
+        type: RequestOption
+        inject_into: request_parameter
+        field_name: key
+    request_parameters:
+      q: "{{ config['location'] }}"
+
+  retriever:
+    type: SimpleRetriever
+    record_selector:
+      $ref: "#/definitions/selector"
+    requester:
+      $ref: "#/definitions/requester"
+
+  base_stream:
+    type: DeclarativeStream
+    retriever:
+      $ref: "#/definitions/retriever"
+
+  current_weather_stream:
+    $ref: "#/definitions/base_stream"
+    $parameters:
+      name: "current_weather"
+      path: "/current.json"
+
+  forecast_stream:
+    $ref: "#/definitions/base_stream"
+    $parameters:
+      name: "forecast"
+      path: "/forecast.json"
+    retriever:
+      $ref: "#/definitions/retriever"
+      requester:
+        $ref: "#/definitions/requester"
+        request_parameters:
+          q: "{{ config['location'] }}"
+          days: "{{ config['forecast_days'] or 3 }}"
+    transformations:
+      - type: AddFields
+        fields:
+          - type: AddedFieldDefinition
+            path:
+              - retrieved_at
+            value: "{{ now_utc().strftime('%Y-%m-%dT%H:%M:%SZ') }}"
+
+streams:
+  - $ref: "#/definitions/current_weather_stream"
+  - $ref: "#/definitions/forecast_stream"
+
+spec:
+  type: Spec
+  documentation_url: https://docs.airbyte.com/integrations/sources/weather-api
+  connection_specification:
+    $schema: http://json-schema.org/draft-07/schema#
+    title: Weather API Spec
+    type: object
+    required:
+      - api_key
+      - location
+    properties:
+      api_key:
+        type: string
+        title: API Key
+        description: Your Weather API key
+        airbyte_secret: true
+        order: 0
+      location:
+        type: string
+        title: Location
+        description: City name, zip code, or lat/long coordinates
+        examples:
+          - "London"
+          - "10001"
+          - "48.8567,2.3508"
+        order: 1
+      forecast_days:
+        type: integer
+        title: Forecast Days
+        description: Number of days for forecast (1-10)
+        minimum: 1
+        maximum: 10
+        default: 3
+        order: 2

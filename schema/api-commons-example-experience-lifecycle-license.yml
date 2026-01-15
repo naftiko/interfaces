@@ -1,0 +1,487 @@
+- id: api-platform-complete
+  name: API Platform - Complete Definition
+  type: platform
+  description: >-
+    A comprehensive API platform definition including experiences, lifecycle
+    stages, guidance, roadmap, and interface licensing information.
+  entries:
+    - label: Platform APIs
+      description: Total number of APIs available on the platform
+      name: platform_apis
+      type: inventory
+      metric: count
+      limit: 150
+      timeFrame: current
+      geo: global
+      unit: 1
+      price: '0.00'
+  elements:
+    - name: Core Platform APIs
+    - name: Partner APIs
+    - name: Internal APIs
+  experiences:
+    - name: Developer Onboarding
+      slug: developer-onboarding
+      image: https://cdn.example.com/experiences/onboarding.svg
+      description: >-
+        The experience of a new developer discovering, understanding, and making
+        their first successful API call. This includes account creation, API key
+        generation, documentation review, and sandbox testing.
+      tags:
+        - onboarding
+        - getting-started
+        - first-call
+        - developer-experience
+      properties:
+        - documentation
+        - getting-started
+        - authentication
+        - sandbox
+        - quick-start-guides
+    - name: API Discovery
+      slug: api-discovery
+      image: https://cdn.example.com/experiences/discovery.svg
+      description: >-
+        The experience of finding and evaluating APIs that meet specific
+        business or technical requirements. Includes catalog browsing, search,
+        filtering, and comparison capabilities.
+      tags:
+        - discovery
+        - catalog
+        - search
+        - evaluation
+      properties:
+        - api-catalog
+        - search
+        - categories
+        - tags
+        - ratings
+        - use-cases
+    - name: Integration Development
+      slug: integration-development
+      image: https://cdn.example.com/experiences/integration.svg
+      description: >-
+        The experience of building an integration using the API, including SDK
+        usage, code examples, error handling, and testing.
+      tags:
+        - integration
+        - development
+        - sdk
+        - coding
+      properties:
+        - sdks
+        - code-samples
+        - openapi-specification
+        - postman-collection
+        - error-reference
+    - name: Production Operations
+      slug: production-operations
+      image: https://cdn.example.com/experiences/operations.svg
+      description: >-
+        The experience of operating an API integration in production, including
+        monitoring, troubleshooting, and scaling.
+      tags:
+        - production
+        - operations
+        - monitoring
+        - support
+      properties:
+        - status-page
+        - monitoring
+        - logging
+        - support-tickets
+        - sla-dashboard
+    - name: Version Migration
+      slug: version-migration
+      image: https://cdn.example.com/experiences/migration.svg
+      description: >-
+        The experience of migrating from one API version to another, including
+        change assessment, code updates, and validation.
+      tags:
+        - migration
+        - versioning
+        - upgrade
+        - breaking-changes
+      properties:
+        - changelog
+        - migration-guides
+        - deprecation-notices
+        - compatibility-tools
+  lifecycle:
+    label_name_1:
+      name: Plan
+      description: >-
+        Initial planning phase where API requirements are gathered and design
+        decisions are made.
+      image: https://cdn.example.com/lifecycle/plan.svg
+      policies:
+        - api-design-review-required
+        - business-case-approval
+      guidance:
+        - api-planning-guide
+        - requirements-template
+      tools:
+        - confluence
+        - jira
+        - miro
+    label_name_2:
+      name: Design
+      description: API design phase using design-first approach with OpenAPI specification.
+      image: https://cdn.example.com/lifecycle/design.svg
+      policies:
+        - openapi-spec-required
+        - design-review-required
+      guidance:
+        - api-design-guidelines
+        - naming-conventions
+      tools:
+        - stoplight
+        - swagger-editor
+        - spectral
+    label_name_3:
+      name: Develop
+      description: >-
+        Implementation phase where the API is built according to the approved
+        design.
+      image: https://cdn.example.com/lifecycle/develop.svg
+      policies:
+        - code-review-required
+        - security-scan-required
+      guidance:
+        - implementation-standards
+        - testing-requirements
+      tools:
+        - github
+        - jenkins
+        - sonarqube
+    label_name_4:
+      name: Test
+      description: >-
+        Comprehensive testing phase including unit, integration, performance,
+        and security testing.
+      image: https://cdn.example.com/lifecycle/test.svg
+      policies:
+        - test-coverage-minimum
+        - performance-baseline
+      guidance:
+        - testing-strategy
+        - test-data-management
+      tools:
+        - postman
+        - k6
+        - owasp-zap
+    label_name_5:
+      name: Deploy
+      description: Deployment to production environment with proper change management.
+      image: https://cdn.example.com/lifecycle/deploy.svg
+      policies:
+        - change-approval-required
+        - rollback-plan-required
+      guidance:
+        - deployment-checklist
+        - rollback-procedures
+      tools:
+        - kubernetes
+        - argocd
+        - terraform
+    label_name_6:
+      name: Operate
+      description: Ongoing operation and monitoring of the API in production.
+      image: https://cdn.example.com/lifecycle/operate.svg
+      policies:
+        - sla-monitoring-required
+        - incident-response
+      guidance:
+        - monitoring-guide
+        - incident-playbooks
+      tools:
+        - datadog
+        - pagerduty
+        - grafana
+    label_name_7:
+      name: Evolve
+      description: >-
+        Continuous improvement and evolution of the API based on feedback and
+        metrics.
+      image: https://cdn.example.com/lifecycle/evolve.svg
+      policies:
+        - deprecation-policy
+        - breaking-change-policy
+      guidance:
+        - versioning-strategy
+        - deprecation-timeline
+      tools:
+        - analytics
+        - feedback-portal
+        - roadmap-tool
+    label_name_8:
+      name: Retire
+      description: End-of-life phase with proper sunset procedures and consumer migration.
+      image: https://cdn.example.com/lifecycle/retire.svg
+      policies:
+        - sunset-notice-period
+        - migration-support
+      guidance:
+        - retirement-checklist
+        - consumer-communication
+      tools:
+        - communication-templates
+        - migration-tracker
+  guidance:
+    - title: API Design Guidelines
+      subtitle: Comprehensive guidelines for designing consistent, user-friendly APIs
+      tags:
+        - design
+        - guidelines
+        - best-practices
+        - rest
+      author: API Architecture Team
+      visibility: public
+      business: >-
+        Consistent API design reduces development time and improves partner
+        satisfaction.
+      technology: Based on REST principles, OpenAPI 3.1, and JSON:API conventions.
+      policies: Enforced through automated Spectral rules during CI/CD pipeline.
+      people: >-
+        All API developers must complete API design training before
+        contributing.
+    - title: Security Implementation Guide
+      subtitle: Step-by-step guide for implementing API security correctly
+      tags:
+        - security
+        - oauth
+        - authentication
+        - authorization
+      author: Security Engineering Team
+      visibility: public
+      business: >-
+        Proper security implementation protects customer data and company
+        reputation.
+      technology: OAuth 2.0 with PKCE for public clients, JWT for service-to-service.
+      policies: Mandatory compliance with SOC 2 and GDPR requirements.
+      people: >-
+        Security team must review and approve all authentication
+        implementations.
+    - title: Performance Optimization Guide
+      subtitle: Best practices for building high-performance APIs
+      tags:
+        - performance
+        - optimization
+        - caching
+        - scaling
+      author: Platform Engineering Team
+      visibility: public
+      business: Fast APIs improve user experience and reduce infrastructure costs.
+      technology: Covers caching strategies, pagination, compression, and async patterns.
+      policies: APIs must meet P99 latency targets defined in SLA.
+      people: SRE team provides performance testing support and consultation.
+    - title: Error Handling Standards
+      subtitle: Standardized approach to API error responses and handling
+      tags:
+        - errors
+        - responses
+        - standards
+        - troubleshooting
+      author: Developer Experience Team
+      visibility: public
+      business: Clear error messages reduce support tickets and improve self-service.
+      technology: RFC 7807 Problem Details format with custom extensions.
+      policies: All APIs must implement standard error response format.
+      people: Support team provides feedback on common error scenarios.
+  roadMap:
+    - date: 2025-Q1
+      name: GraphQL Gateway Launch
+      image: https://cdn.example.com/roadmap/graphql-gateway.png
+      link: https://roadmap.example.com/items/graphql-gateway
+      tags:
+        - graphql
+        - gateway
+        - federation
+        - new-capability
+    - date: 2025-Q1
+      name: Enhanced Rate Limiting
+      image: https://cdn.example.com/roadmap/rate-limiting.png
+      link: https://roadmap.example.com/items/enhanced-rate-limiting
+      tags:
+        - rate-limiting
+        - quotas
+        - fairness
+        - improvement
+    - date: 2025-Q2
+      name: API Analytics Dashboard
+      image: https://cdn.example.com/roadmap/analytics.png
+      link: https://roadmap.example.com/items/analytics-dashboard
+      tags:
+        - analytics
+        - dashboard
+        - metrics
+        - insights
+    - date: 2025-Q2
+      name: Webhook Management Portal
+      image: https://cdn.example.com/roadmap/webhooks.png
+      link: https://roadmap.example.com/items/webhook-management
+      tags:
+        - webhooks
+        - events
+        - management
+        - self-service
+    - date: 2025-Q3
+      name: AI-Powered Documentation
+      image: https://cdn.example.com/roadmap/ai-docs.png
+      link: https://roadmap.example.com/items/ai-documentation
+      tags:
+        - ai
+        - documentation
+        - automation
+        - developer-experience
+    - date: 2025-Q4
+      name: Multi-Region Deployment
+      image: https://cdn.example.com/roadmap/multi-region.png
+      link: https://roadmap.example.com/items/multi-region
+      tags:
+        - infrastructure
+        - regions
+        - latency
+        - compliance
+  changeLog:
+    - date: '2025-01-15'
+      name: API Platform v3.0 Released
+      image: https://cdn.example.com/changelog/v3-release.png
+      link: https://blog.example.com/api-platform-v3
+      tags:
+        - release
+        - major-version
+        - platform
+    - date: '2025-01-10'
+      name: 'New SDK Support: Rust and Go'
+      image: https://cdn.example.com/changelog/new-sdks.png
+      link: https://blog.example.com/rust-go-sdks
+      tags:
+        - sdk
+        - rust
+        - go
+        - new-feature
+    - date: '2025-01-05'
+      name: Improved Error Messages
+      image: https://cdn.example.com/changelog/errors.png
+      link: https://blog.example.com/error-improvements
+      tags:
+        - errors
+        - improvement
+        - developer-experience
+    - date: '2024-12-20'
+      name: OAuth 2.1 Support
+      image: https://cdn.example.com/changelog/oauth21.png
+      link: https://blog.example.com/oauth21-support
+      tags:
+        - security
+        - oauth
+        - authentication
+        - upgrade
+  interfaceLicense:
+    apis:
+      - name: Core Platform API
+        description: >-
+          The primary API for accessing platform resources including users,
+          projects, and configurations.
+        image: https://cdn.example.com/apis/core-platform.svg
+        tags:
+          - core
+          - platform
+          - rest
+          - crud
+        licenses:
+          - type: interface
+            license: Apache-2.0
+            attribution: Example Corp API Platform
+            url: https://www.apache.org/licenses/LICENSE-2.0
+          - type: data
+            license: CC-BY-4.0
+            attribution: Example Corp
+            url: https://creativecommons.org/licenses/by/4.0/
+        definitions:
+          - type: OpenAPI
+            url: https://api.example.com/specs/core-platform-v3.yaml
+          - type: AsyncAPI
+            url: https://api.example.com/specs/core-platform-events-v3.yaml
+          - type: JSON Schema
+            url: https://api.example.com/schemas/core-platform/
+      - name: Analytics API
+        description: >-
+          API for accessing analytics data, reports, and real-time metrics about
+          API usage and performance.
+        image: https://cdn.example.com/apis/analytics.svg
+        tags:
+          - analytics
+          - metrics
+          - reporting
+          - insights
+        licenses:
+          - type: interface
+            license: Apache-2.0
+            attribution: Example Corp API Platform
+            url: https://www.apache.org/licenses/LICENSE-2.0
+          - type: data
+            license: Proprietary
+            attribution: Example Corp - Customer Data
+            url: https://example.com/legal/data-terms
+        definitions:
+          - type: OpenAPI
+            url: https://api.example.com/specs/analytics-v2.yaml
+          - type: GraphQL Schema
+            url: https://api.example.com/graphql/analytics/schema
+      - name: Payments API
+        description: >-
+          Secure API for processing payments, managing subscriptions, and
+          handling billing operations.
+        image: https://cdn.example.com/apis/payments.svg
+        tags:
+          - payments
+          - billing
+          - subscriptions
+          - pci
+        licenses:
+          - type: interface
+            license: Proprietary
+            attribution: Example Corp Financial Services
+            url: https://example.com/legal/payments-api-terms
+          - type: data
+            license: PCI-DSS Compliant
+            attribution: Example Corp - PCI Level 1
+            url: https://example.com/security/pci-compliance
+        definitions:
+          - type: OpenAPI
+            url: https://api.example.com/specs/payments-v3.yaml
+          - type: Postman Collection
+            url: https://api.example.com/postman/payments-v3.json
+      - name: Partner Integration API
+        description: >-
+          API designed for partner integrations with extended capabilities and
+          dedicated support.
+        image: https://cdn.example.com/apis/partner.svg
+        tags:
+          - partner
+          - integration
+          - b2b
+          - enterprise
+        licenses:
+          - type: interface
+            license: Partner Agreement
+            attribution: Subject to Partner Agreement Terms
+            url: https://partners.example.com/agreement
+          - type: data
+            license: Data Processing Agreement
+            attribution: Example Corp Partner Program
+            url: https://partners.example.com/dpa
+        definitions:
+          - type: OpenAPI
+            url: https://partners.example.com/specs/integration-v2.yaml
+          - type: SDK Documentation
+            url: https://partners.example.com/docs/sdk
+    tags:
+      - api-licensing
+      - open-source
+      - proprietary
+      - data-rights
+      - interface-rights
+    updated: '2025-01-13T00:00:00Z'

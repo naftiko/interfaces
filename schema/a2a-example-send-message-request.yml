@@ -1,0 +1,17 @@
+jsonrpc: '2.0'
+id: req-001
+method: message/send
+params:
+  message:
+    kind: message
+    messageId: msg-abc123
+    role: user
+    parts:
+      - kind: text
+        text: I need a recipe for bread using sourdough starter
+  configuration:
+    acceptedOutputModes:
+      - text/plain
+      - application/json
+    blocking: true
+    historyLength: 10

@@ -1,0 +1,169 @@
+arazzo: "1.0.0"
+info:
+  title: User Authentication Workflows
+  summary: Basic workflows for user registration and authentication
+  description: |
+    This Arazzo description defines simple workflows for user registration,
+    login, and profile retrieval. These workflows demonstrate basic API
+    orchestration patterns.
+  version: "1.0.0"
+
+sourceDescriptions:
+  - name: user-api
+    url: ./openapi/user-service.yaml
+    type: openapi
+
+workflows:
+  - workflowId: user-registration
+    summary: Register a new user account
+    description: |
+      Creates a new user account and sends a verification email.
+      Upon successful registration, returns the user profile.
+    inputs:
+      type: object
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+        password:
+          type: string
+          minLength: 8
+          description: User's password (minimum 8 characters)
+        firstName:
+          type: string
+          description: User's first name
+        lastName:
+          type: string
+          description: User's last name
+    steps:
+      - stepId: check-email-availability
+        operationId: user-api.checkEmailAvailability
+        parameters:
+          - name: email
+            in: query
+            value: $inputs.email
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body.available == true
+        onFailure:
+          - name: email-taken
+            type: end
+            criteria:
+              - condition: $response.body.available == false
+
+      - stepId: create-user
+        operationId: user-api.createUser
+        requestBody:
+          contentType: application/json
+          payload:
+            email: $inputs.email
+            password: $inputs.password
+            firstName: $inputs.firstName
+            lastName: $inputs.lastName
+        successCriteria:
+          - condition: $statusCode == 201
+        outputs:
+          userId: $response.body.id
+          verificationToken: $response.body.verificationToken
+
+      - stepId: send-verification-email
+        operationId: user-api.sendVerificationEmail
+        parameters:
+          - name: userId
+            in: path
+            value: $steps.create-user.outputs.userId
+        requestBody:
+          contentType: application/json
+          payload:
+            token: $steps.create-user.outputs.verificationToken
+        successCriteria:
+          - condition: $statusCode == 200
+
+    outputs:
+      userId: $steps.create-user.outputs.userId
+      message: "Registration successful. Please check your email to verify your account."
+
+  - workflowId: user-login
+    summary: Authenticate a user and retrieve access token
+    description: Validates user credentials and returns JWT access and refresh tokens.
+    inputs:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    steps:
+      - stepId: authenticate
+        operationId: user-api.login
+        requestBody:
+          contentType: application/json
+          payload:
+            email: $inputs.email
+            password: $inputs.password
+        successCriteria:
+          - condition: $statusCode == 200
+          - condition: $response.body.accessToken != null
+        outputs:
+          accessToken: $response.body.accessToken
+          refreshToken: $response.body.refreshToken
+          expiresIn: $response.body.expiresIn
+
+      - stepId: get-user-profile
+        operationId: user-api.getCurrentUser
+        parameters:
+          - name: Authorization
+            in: header
+            value: Bearer $steps.authenticate.outputs.accessToken
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          userId: $response.body.id
+          email: $response.body.email
+          fullName: $response.body.firstName + " " + $response.body.lastName
+
+    outputs:
+      accessToken: $steps.authenticate.outputs.accessToken
+      refreshToken: $steps.authenticate.outputs.refreshToken
+      expiresIn: $steps.authenticate.outputs.expiresIn
+      user:
+        id: $steps.get-user-profile.outputs.userId
+        email: $steps.get-user-profile.outputs.email
+        fullName: $steps.get-user-profile.outputs.fullName
+
+  - workflowId: password-reset
+    summary: Request and complete password reset
+    description: Initiates password reset flow by sending reset email to user.
+    inputs:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+    steps:
+      - stepId: request-reset
+        operationId: user-api.requestPasswordReset
+        requestBody:
+          contentType: application/json
+          payload:
+            email: $inputs.email
+        successCriteria:
+          - condition: $statusCode == 200
+        outputs:
+          message: $response.body.message
+
+    outputs:
+      success: true
+      message: $steps.request-reset.outputs.message

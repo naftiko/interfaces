@@ -1,0 +1,373 @@
+aid: acme-corporation-api-network
+type: Index
+name: ACME Corporation API Network
+description: >-
+  Enterprise API network for ACME Corporation encompassing all business units,
+  partner integrations, and federated API services across the organization.
+url: https://api.acme-corp.com/apis.json
+image: https://cdn.acme-corp.com/brand/api-network-logo.svg
+created: '2022-01-15'
+modified: '2025-01-13'
+specificationVersion: '0.18'
+apis:
+  - aid: acme-identity-api
+    name: ACME Identity API
+    description: >-
+      Centralized identity and access management API providing authentication,
+      authorization, SSO, and user management across all ACME services.
+    image: https://cdn.acme-corp.com/apis/identity-icon.svg
+    baseURL: https://identity.api.acme-corp.com/v2
+    humanURL: https://developers.acme-corp.com/identity
+    tags:
+      - identity
+      - authentication
+      - authorization
+      - sso
+      - oauth
+      - oidc
+      - enterprise
+    properties:
+      - name: OpenAPI Specification
+        type: OpenAPI
+        mediaType: application/yaml
+        url: https://identity.api.acme-corp.com/v2/openapi.yaml
+      - name: JSON Schemas
+        type: JSONSchema
+        url: https://identity.api.acme-corp.com/v2/schemas/
+      - name: Developer Documentation
+        type: Documentation
+        url: https://developers.acme-corp.com/identity/docs
+      - name: Integration Guide
+        type: GettingStarted
+        url: https://developers.acme-corp.com/identity/integration-guide
+      - name: Authentication Flows
+        type: Authentication
+        url: https://developers.acme-corp.com/identity/auth-flows
+      - name: Security Whitepaper
+        type: Security
+        url: https://developers.acme-corp.com/identity/security
+      - name: SDK Downloads
+        type: SDKs
+        url: https://developers.acme-corp.com/identity/sdks
+      - name: Postman Collection
+        type: PostmanCollection
+        url: https://identity.api.acme-corp.com/v2/postman-collection.json
+      - name: Postman Workspace
+        type: PostmanWorkspace
+        url: https://www.postman.com/acme-corp/workspace/identity-api
+      - name: Error Reference
+        type: ErrorCodes
+        url: https://developers.acme-corp.com/identity/errors
+      - name: Rate Limits
+        type: RateLimits
+        url: https://developers.acme-corp.com/identity/rate-limits
+      - name: Changelog
+        type: ChangeLog
+        url: https://developers.acme-corp.com/identity/changelog
+      - name: API Versioning
+        type: Versioning
+        url: https://developers.acme-corp.com/identity/versioning
+      - name: Deprecation Policy
+        type: DeprecationPolicy
+        url: https://developers.acme-corp.com/identity/deprecation
+      - name: Webhook Events
+        type: Webhooks
+        url: https://developers.acme-corp.com/identity/webhooks
+      - name: GitHub Repository
+        type: GitHubRepo
+        url: https://github.com/acme-corp/identity-api
+      - name: OpenAI Plugin Manifest
+        type: OpenAIPluginManifest
+        url: https://identity.api.acme-corp.com/.well-known/ai-plugin.json
+      - name: Custom Integration Portal
+        type: X-IntegrationPortal
+        url: https://integrations.acme-corp.com/identity
+    contact:
+      - FN: Identity Platform Team
+        email: identity-team@acme-corp.com
+        organizationName: ACME Corporation - Platform Engineering
+        tel: +1-555-0100
+        url: https://developers.acme-corp.com/identity/support
+        X-github: acme-corp
+        X-twitter: '@acme_identity'
+        photo: https://cdn.acme-corp.com/teams/identity-team.jpg
+    meta:
+      - key: business-unit
+        value: platform-engineering
+      - key: data-classification
+        value: confidential
+      - key: compliance
+        value: soc2,gdpr,hipaa
+      - key: sla-tier
+        value: mission-critical
+      - key: api-gateway
+        value: kong-enterprise
+  - aid: acme-data-platform-api
+    name: ACME Data Platform API
+    description: >-
+      Enterprise data platform API for accessing data lakes, data warehouses,
+      real-time streams, and analytics capabilities across the organization.
+    image: https://cdn.acme-corp.com/apis/data-platform-icon.svg
+    baseURL: https://data.api.acme-corp.com/v3
+    humanURL: https://developers.acme-corp.com/data-platform
+    tags:
+      - data
+      - analytics
+      - streaming
+      - warehouse
+      - lake
+      - enterprise
+      - big-data
+    properties:
+      - name: OpenAPI Specification
+        type: OpenAPI
+        url: https://data.api.acme-corp.com/v3/openapi.yaml
+      - name: AsyncAPI Specification
+        type: AsyncAPI
+        url: https://data.api.acme-corp.com/v3/asyncapi.yaml
+      - name: GraphQL Schema
+        type: GraphQLSchema
+        url: https://data.api.acme-corp.com/v3/graphql/schema
+      - name: Documentation
+        type: Documentation
+        url: https://developers.acme-corp.com/data-platform/docs
+      - name: Getting Started
+        type: GettingStarted
+        url: https://developers.acme-corp.com/data-platform/quickstart
+      - name: SDKs
+        type: SDKs
+        url: https://developers.acme-corp.com/data-platform/sdks
+      - name: Rate Limits
+        type: RateLimits
+        url: https://developers.acme-corp.com/data-platform/rate-limits
+      - name: Changelog
+        type: ChangeLog
+        url: https://developers.acme-corp.com/data-platform/changelog
+      - name: Roadmap
+        type: RoadMap
+        url: https://developers.acme-corp.com/data-platform/roadmap
+      - name: Integrations Catalog
+        type: Integrations
+        url: https://developers.acme-corp.com/data-platform/integrations
+    contact:
+      - FN: Data Platform Team
+        email: data-platform@acme-corp.com
+        organizationName: ACME Corporation - Data Engineering
+        X-github: acme-corp-data
+    meta:
+      - key: business-unit
+        value: data-engineering
+      - key: data-classification
+        value: highly-confidential
+  - aid: acme-notifications-api
+    name: ACME Notifications API
+    description: >-
+      Unified notifications API for sending emails, SMS, push notifications, and
+      in-app messages across all ACME applications.
+    image: https://cdn.acme-corp.com/apis/notifications-icon.svg
+    baseURL: https://notifications.api.acme-corp.com/v2
+    humanURL: https://developers.acme-corp.com/notifications
+    tags:
+      - notifications
+      - email
+      - sms
+      - push
+      - messaging
+      - enterprise
+    properties:
+      - name: OpenAPI Specification
+        type: OpenAPI
+        url: https://notifications.api.acme-corp.com/v2/openapi.yaml
+      - name: AsyncAPI for Events
+        type: AsyncAPI
+        url: https://notifications.api.acme-corp.com/v2/asyncapi.yaml
+      - name: Documentation
+        type: Documentation
+        url: https://developers.acme-corp.com/notifications/docs
+      - name: Webhook Configuration
+        type: Webhooks
+        url: https://developers.acme-corp.com/notifications/webhooks
+      - name: Getting Started
+        type: GettingStarted
+        url: https://developers.acme-corp.com/notifications/quickstart
+      - name: Error Codes
+        type: ErrorCodes
+        url: https://developers.acme-corp.com/notifications/errors
+    contact:
+      - FN: Notifications Team
+        email: notifications-team@acme-corp.com
+        organizationName: ACME Corporation - Platform Services
+  - aid: acme-partner-api
+    name: ACME Partner Integration API
+    description: >-
+      Dedicated API for strategic partners enabling deep integrations with ACME
+      services, white-label solutions, and revenue sharing capabilities.
+    image: https://cdn.acme-corp.com/apis/partner-icon.svg
+    baseURL: https://partner.api.acme-corp.com/v1
+    humanURL: https://partners.acme-corp.com/developers
+    tags:
+      - partner
+      - integration
+      - b2b
+      - white-label
+      - enterprise
+      - revenue-share
+    properties:
+      - name: OpenAPI Specification
+        type: OpenAPI
+        url: https://partner.api.acme-corp.com/v1/openapi.yaml
+      - name: Partner Documentation
+        type: Documentation
+        url: https://partners.acme-corp.com/developers/docs
+      - name: Partner Onboarding
+        type: GettingStarted
+        url: https://partners.acme-corp.com/developers/onboarding
+      - name: Partner Terms of Service
+        type: TermsOfService
+        url: https://partners.acme-corp.com/legal/api-tos
+      - name: Interface License
+        type: InterfaceLicense
+        url: https://partners.acme-corp.com/legal/interface-license
+      - name: Partner SLA
+        type: ServiceLevelAgreement
+        url: https://partners.acme-corp.com/legal/sla
+      - name: Partner Support
+        type: Support
+        url: https://partners.acme-corp.com/support
+      - name: Partner Portal Login
+        type: Login
+        url: https://partners.acme-corp.com/login
+    contact:
+      - FN: Partner Engineering Team
+        email: partner-engineering@acme-corp.com
+        organizationName: ACME Corporation - Partner Solutions
+        tel: +1-555-0200
+        url: https://partners.acme-corp.com/contact
+    meta:
+      - key: audience
+        value: partners-only
+      - key: access-level
+        value: restricted
+common:
+  - type: Documentation
+    url: https://developers.acme-corp.com/docs
+  - type: Authentication
+    url: https://developers.acme-corp.com/auth
+  - type: Signup
+    url: https://developers.acme-corp.com/signup
+  - type: Login
+    url: https://developers.acme-corp.com/login
+  - type: TermsOfService
+    url: https://acme-corp.com/legal/api-terms
+  - type: PrivacyPolicy
+    url: https://acme-corp.com/legal/privacy
+  - type: ServiceLevelAgreement
+    url: https://acme-corp.com/legal/sla
+  - type: Security
+    url: https://developers.acme-corp.com/security
+  - type: SDKs
+    url: https://developers.acme-corp.com/sdks
+  - type: StatusPage
+    url: https://status.acme-corp.com
+  - type: Pricing
+    url: https://acme-corp.com/pricing/api
+  - type: RateLimits
+    url: https://developers.acme-corp.com/rate-limits
+  - type: Blog
+    url: https://developers.acme-corp.com/blog
+  - type: BlogFeed
+    url: https://developers.acme-corp.com/blog/feed.xml
+  - type: Forums
+    url: https://community.acme-corp.com
+  - type: Support
+    url: https://support.acme-corp.com
+  - type: ChangeLog
+    url: https://developers.acme-corp.com/changelog
+  - type: RoadMap
+    url: https://developers.acme-corp.com/roadmap
+  - type: Versioning
+    url: https://developers.acme-corp.com/versioning
+  - type: DeprecationPolicy
+    url: https://developers.acme-corp.com/deprecation
+  - type: ErrorCodes
+    url: https://developers.acme-corp.com/errors
+  - type: GitHubOrg
+    url: https://github.com/acme-corp
+  - type: Twitter
+    url: https://twitter.com/acme_developers
+  - type: AlertsTwitterHandle
+    url: https://twitter.com/acme_api_status
+  - type: Contact
+    url: https://developers.acme-corp.com/contact
+maintainers:
+  - FN: ACME Developer Relations
+    email: devrel@acme-corp.com
+    organizationName: ACME Corporation
+    adr: 123 Innovation Drive, Tech City, TC 12345, USA
+    tel: +1-555-0100
+    url: https://developers.acme-corp.com
+    X-github: acme-corp
+    X-twitter: '@acme_developers'
+    photo: https://cdn.acme-corp.com/teams/devrel-team.jpg
+    vCard: https://developers.acme-corp.com/team.vcf
+  - FN: API Platform Team
+    email: api-platform@acme-corp.com
+    organizationName: ACME Corporation - Engineering
+    X-github: acme-corp-platform
+  - FN: API Governance Board
+    email: api-governance@acme-corp.com
+    organizationName: ACME Corporation - Architecture
+tags:
+  - enterprise
+  - platform
+  - identity
+  - data
+  - notifications
+  - partner
+  - b2b
+  - api-network
+include:
+  - name: ACME Finance APIs
+    url: https://finance.api.acme-corp.com/apis.json
+  - name: ACME HR APIs
+    url: https://hr.api.acme-corp.com/apis.json
+  - name: ACME Supply Chain APIs
+    url: https://supplychain.api.acme-corp.com/apis.json
+  - name: ACME Marketing APIs
+    url: https://marketing.api.acme-corp.com/apis.json
+  - name: ACME Sales APIs
+    url: https://sales.api.acme-corp.com/apis.json
+  - name: ACME IoT Platform APIs
+    url: https://iot.api.acme-corp.com/apis.json
+overlays:
+  - name: ACME API Governance Policies
+    url: https://governance.acme-corp.com/apis-overlay.json
+  - name: ACME Security Requirements
+    url: https://security.acme-corp.com/api-security-overlay.json
+  - name: Regional Compliance Overlay - EU
+    url: https://compliance.acme-corp.com/eu-overlay.json
+  - name: Regional Compliance Overlay - APAC
+    url: https://compliance.acme-corp.com/apac-overlay.json
+network:
+  - name: ACME Subsidiary - TechStartup Inc.
+    url: https://api.techstartup.com/apis.json
+  - name: ACME Subsidiary - DataCo
+    url: https://api.dataco.io/apis.json
+  - name: Strategic Partner - CloudProvider
+    url: https://api.cloudprovider.com/acme-integration/apis.json
+  - name: Strategic Partner - PaymentProcessor
+    url: https://api.paymentprocessor.com/partners/acme/apis.json
+  - name: Industry Consortium - OpenFinance APIs
+    url: https://openfinance-consortium.org/apis.json
+  - name: Government Integration Portal
+    url: https://api.gov-integration.gov/partners/acme/apis.json
+X-api-governance:
+  framework: ACME API Governance Framework v2.0
+  compliance-dashboard: https://governance.acme-corp.com/dashboard
+  spectral-ruleset: https://governance.acme-corp.com/spectral/acme-ruleset.yaml
+  design-guidelines: https://developers.acme-corp.com/design-guidelines
+X-enterprise-metadata:
+  organization-id: acme-corp-001
+  cost-center: IT-PLATFORM-001
+  data-domain: enterprise-platform
+  business-capability: digital-platform-services

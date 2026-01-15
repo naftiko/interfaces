@@ -1,0 +1,333 @@
+- id: governance-policies-v1
+  name: API Governance Framework
+  type: governance
+  description: >-
+    Comprehensive API governance policies and automated rules for ensuring
+    consistency, security, and quality across all APIs.
+  entries:
+    - label: Policy Compliance Score
+      description: Minimum compliance score required for API publication
+      name: compliance_score
+      type: threshold
+      metric: percentage
+      limit: 85
+      timeFrame: per_deployment
+      geo: global
+      unit: 1
+      price: '0.00'
+  elements:
+    - name: OpenAPI Specification Compliance
+    - name: Security Standards
+    - name: Naming Conventions
+    - name: Versioning Requirements
+  policies:
+    - name: API Must Have Description
+      slug: api-must-have-description
+      description: >-
+        Every API must include a meaningful description in the OpenAPI
+        specification info section to help consumers understand the API's
+        purpose.
+      scope: Technical Contract
+      property: $.info.description
+      type: openapi
+      guidance: api-documentation-guidelines
+      image: https://cdn.example.com/policies/description-icon.svg
+      policies:
+        - api-documentation-complete
+      tags:
+        - documentation
+        - required
+        - info
+      experiences:
+        - developer-onboarding
+        - api-discovery
+      rules:
+        - openapi-info-description
+      research:
+        - name: Developer Experience Study 2024
+          description: >-
+            Research showing that APIs with comprehensive descriptions have 40%
+            faster adoption rates.
+          url: https://research.example.com/dx-study-2024
+      discussion: https://github.com/example/api-governance/discussions/42
+    - name: Operations Must Have Operation ID
+      slug: operations-must-have-operation-id
+      description: >-
+        Every operation must have a unique operationId for SDK generation and
+        documentation linking.
+      scope: Technical Contract
+      property: $.paths.*.*.operationId
+      type: openapi
+      guidance: operation-naming-guidelines
+      image: https://cdn.example.com/policies/operation-icon.svg
+      policies:
+        - consistent-naming-conventions
+      tags:
+        - operations
+        - required
+        - sdk-generation
+      experiences:
+        - sdk-usage
+        - code-generation
+      rules:
+        - openapi-operation-id-required
+      research:
+        - name: SDK Generation Best Practices
+          description: >-
+            Analysis of SDK generation tools and their dependency on operationId
+            for method naming.
+          url: https://research.example.com/sdk-generation-2024
+      discussion: https://github.com/example/api-governance/discussions/56
+    - name: Security Scheme Required
+      slug: security-scheme-required
+      description: >-
+        All APIs must define at least one security scheme and apply it globally
+        or to individual operations.
+      scope: Technical Contract
+      property: $.components.securitySchemes
+      type: openapi
+      guidance: api-security-guidelines
+      image: https://cdn.example.com/policies/security-icon.svg
+      policies:
+        - authentication-required
+        - authorization-standards
+      tags:
+        - security
+        - required
+        - authentication
+      experiences:
+        - secure-integration
+        - compliance
+      rules:
+        - openapi-security-defined
+        - openapi-security-applied
+      research:
+        - name: API Security Audit 2024
+          description: >-
+            Security audit findings showing that APIs without defined security
+            schemes are 5x more likely to have vulnerabilities.
+          url: https://security.example.com/audit-2024
+      discussion: https://github.com/example/api-governance/discussions/78
+    - name: Semantic Versioning Required
+      slug: semantic-versioning-required
+      description: >-
+        API versions must follow semantic versioning (semver) format in the
+        info.version field.
+      scope: Business Contract
+      property: $.info.version
+      type: openapi
+      guidance: api-versioning-guidelines
+      image: https://cdn.example.com/policies/version-icon.svg
+      policies:
+        - breaking-change-management
+        - deprecation-policy
+      tags:
+        - versioning
+        - required
+        - semver
+      experiences:
+        - version-migration
+        - change-management
+      rules:
+        - openapi-version-semver
+      research:
+        - name: API Versioning Strategies
+          description: >-
+            Comparative analysis of versioning strategies and their impact on
+            API consumer experience.
+          url: https://research.example.com/versioning-strategies
+      discussion: https://github.com/example/api-governance/discussions/91
+  rules:
+    - name: OpenAPI Info Description Required
+      slug: openapi-info-description
+      description: >-
+        Ensures that the OpenAPI specification includes a description in the
+        info section.
+      engine: SPECTRAL
+      specification: OpenAPI 3.x
+      specificationUrl: https://spec.openapis.org/oas/v3.1.0#info-object
+      guidance: >-
+        API descriptions help consumers understand the purpose and scope of the
+        API.
+      guidanceUrl: https://docs.example.com/governance/api-description
+      scope: error
+      type: Default
+      tags:
+        - info
+        - description
+        - documentation
+      rule:
+        description: Info object must have a description
+        message: The info object must contain a description field.
+        given: $.info
+        severity: error
+        then:
+          field: description
+          function: truthy
+    - name: Operation ID Required
+      slug: openapi-operation-id-required
+      description: Ensures every operation has a unique operationId defined.
+      engine: SPECTRAL
+      specification: OpenAPI 3.x
+      specificationUrl: https://spec.openapis.org/oas/v3.1.0#operation-object
+      guidance: >-
+        Operation IDs are essential for SDK generation and deep linking to
+        documentation.
+      guidanceUrl: https://docs.example.com/governance/operation-id
+      scope: error
+      type: Default
+      tags:
+        - operations
+        - operationId
+        - required
+      rule:
+        description: Operations must have an operationId
+        message: Operation '{{path}}' must have an operationId.
+        given: $.paths.*[get,post,put,patch,delete,options,head,trace]
+        severity: error
+        then:
+          field: operationId
+          function: truthy
+    - name: Operation ID Naming Convention
+      slug: openapi-operation-id-camel-case
+      description: Ensures operationIds follow camelCase naming convention.
+      engine: SPECTRAL
+      specification: OpenAPI 3.x
+      specificationUrl: https://spec.openapis.org/oas/v3.1.0#operation-object
+      guidance: >-
+        Consistent naming conventions improve code readability in generated
+        SDKs.
+      guidanceUrl: https://docs.example.com/governance/naming-conventions
+      scope: warn
+      type: Custom
+      tags:
+        - operations
+        - operationId
+        - naming
+      rule:
+        description: Operation IDs must be camelCase
+        message: operationId '{{value}}' should be camelCase.
+        given: $.paths.*[get,post,put,patch,delete,options,head,trace].operationId
+        severity: warn
+        then:
+          function: pattern
+          functionOptions:
+            match: ^[a-z][a-zA-Z0-9]*$
+    - name: Security Scheme Defined
+      slug: openapi-security-defined
+      description: Ensures at least one security scheme is defined in the specification.
+      engine: SPECTRAL
+      specification: OpenAPI 3.x
+      specificationUrl: https://spec.openapis.org/oas/v3.1.0#security-scheme-object
+      guidance: APIs must define authentication mechanisms to protect resources.
+      guidanceUrl: https://docs.example.com/governance/security
+      scope: error
+      type: Default
+      tags:
+        - security
+        - authentication
+        - required
+      rule:
+        description: Security schemes must be defined
+        message: >-
+          API must define at least one security scheme in
+          components.securitySchemes.
+        given: $.components
+        severity: error
+        then:
+          field: securitySchemes
+          function: truthy
+    - name: Semantic Version Format
+      slug: openapi-version-semver
+      description: Ensures the API version follows semantic versioning format.
+      engine: SPECTRAL
+      specification: OpenAPI 3.x
+      specificationUrl: https://spec.openapis.org/oas/v3.1.0#info-object
+      guidance: >-
+        Semantic versioning helps consumers understand the impact of API
+        changes.
+      guidanceUrl: https://docs.example.com/governance/versioning
+      scope: warn
+      type: Custom
+      tags:
+        - versioning
+        - semver
+        - info
+      rule:
+        description: API version must follow semver format
+        message: >-
+          Version '{{value}}' should follow semantic versioning (e.g., 1.0.0,
+          2.1.3-beta).
+        given: $.info.version
+        severity: warn
+        then:
+          function: pattern
+          functionOptions:
+            match: >-
+              ^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
+    - name: Response Must Have Description
+      slug: openapi-response-description
+      description: >-
+        Ensures all responses have a description explaining the response
+        scenario.
+      engine: SPECTRAL
+      specification: OpenAPI 3.x
+      specificationUrl: https://spec.openapis.org/oas/v3.1.0#response-object
+      guidance: >-
+        Response descriptions help consumers understand different response
+        scenarios.
+      guidanceUrl: https://docs.example.com/governance/responses
+      scope: warn
+      type: Default
+      tags:
+        - responses
+        - description
+        - documentation
+      rule:
+        description: Response objects must have descriptions
+        message: Response '{{path}}' must have a description.
+        given: $.paths.*.*.responses.*
+        severity: warn
+        then:
+          field: description
+          function: truthy
+  guidance:
+    - title: API Description Best Practices
+      subtitle: >-
+        How to write effective API descriptions that improve developer
+        experience
+      tags:
+        - documentation
+        - description
+        - best-practices
+      author: API Platform Team
+      visibility: public
+      business: >-
+        Well-documented APIs reduce support costs and accelerate partner
+        integrations.
+      technology: >-
+        OpenAPI 3.x info.description field supports CommonMark markdown
+        formatting.
+      policies: >-
+        Aligns with API Documentation Policy requiring all public APIs to be
+        fully documented.
+      people: >-
+        Technical writers and API developers should collaborate on description
+        content.
+    - title: Security Scheme Implementation Guide
+      subtitle: >-
+        Choosing and implementing the right authentication mechanism for your
+        API
+      tags:
+        - security
+        - authentication
+        - oauth
+        - api-key
+      author: Security Team
+      visibility: public
+      business: >-
+        Proper authentication protects business assets and ensures regulatory
+        compliance.
+      technology: Supports OAuth 2.0, API Keys, Bearer tokens, and OpenID Connect.
+      policies: Required by Security Policy SP-API-001 for all external-facing APIs.
+      people: Security architects must review and approve security scheme selection.
